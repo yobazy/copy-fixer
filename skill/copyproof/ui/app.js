@@ -17,7 +17,10 @@ const ui = {
   compact: Boolean(prefs.compact),
   query: '',
   focusId: null, // card id
-  visible: [], // card ids in display order
+  group: null, // the screen (or file, or kind) on the page; a search shows every group
+  keys: [], // every group with matching cards, in order
+  groups: new Map(), // group key -> matching cards
+  visible: [], // card ids on the page, in display order
   editingId: null,
   openComments: new Set(),
   openPlaces: new Set(),
@@ -35,7 +38,7 @@ const FB_FIELDS = ['rating', 'tags', 'suggestion', 'comment', 'verdict'];
 
 function loadPrefs() {
   try {
-    return JSON.parse(localStorage.getItem('copy-review:prefs') || '{}');
+    return JSON.parse(localStorage.getItem('copyproof:prefs') || localStorage.getItem('copy-review:prefs') || '{}');
   } catch {
     return {};
   }
@@ -43,7 +46,7 @@ function loadPrefs() {
 function savePrefs(patch) {
   Object.assign(prefs, patch);
   try {
-    localStorage.setItem('copy-review:prefs', JSON.stringify(prefs));
+    localStorage.setItem('copyproof:prefs', JSON.stringify(prefs));
   } catch {}
 }
 
@@ -139,7 +142,7 @@ function undo() {
   const card = cardById.get(step.cardId);
   if (card) {
     refreshCard(card.id);
-    setFocus(card.id);
+    goTo(card.id);
   }
   renderProgress();
   toast('Undone');
@@ -415,7 +418,13 @@ function render() {
     groups.get(k).push(c);
   }
   const keys = groupOrder([...groups.keys()]);
-  ui.visible = keys.flatMap((k) => groups.get(k).map((c) => c.id));
+  // One screen at a time keeps big projects manageable. A search looks across all of them.
+  const everything = Boolean(ui.query);
+  if (!everything && !groups.has(ui.group)) ui.group = pickGroup(keys, groups);
+  const shown = everything ? keys : keys.filter((k) => k === ui.group);
+  ui.keys = keys;
+  ui.groups = groups;
+  ui.visible = shown.flatMap((k) => groups.get(k).map((c) => c.id));
   if (ui.focusId && !ui.visible.includes(ui.focusId)) ui.focusId = null;
   if (ui.mode === 'focus' && !ui.focusId && ui.visible.length) ui.focusId = ui.visible.find((id) => !reviewed(cardById.get(id))) || ui.visible[0];
 
@@ -435,7 +444,7 @@ function render() {
     list.insertAdjacentHTML('beforeend', `<div class="empty"><strong>${title}</strong>${body}</div>`);
   }
   // Big projects have thousands of cards: render the top now and the rest in idle chunks.
-  pending = keys.map((k, i) => ({ k, i, cards: groups.get(k) }));
+  pending = shown.map((k) => ({ k, i: keys.indexOf(k), cards: groups.get(k) }));
   cancelIdle();
   drainPending(120);
   if (pending.length) scheduleIdle();
@@ -449,6 +458,56 @@ function render() {
 let pending = [];
 let idleHandle = null;
 
+const groupPrefKey = () => `${state.copy.project}|${ui.groupBy}`;
+
+/** The group to open on: the one you were last on, else the first with something left to review. */
+function pickGroup(keys, groups) {
+  const last = (prefs.groups || {})[groupPrefKey()];
+  if (keys.includes(last)) return last;
+  return keys.find((k) => groups.get(k).some((c) => isLive(c) && !reviewed(c))) || keys[0] || null;
+}
+
+/** Switch the page to another group and focus a card in it: the first to review, the first, or the last. */
+function showGroup(k, { pick = 'unrated' } = {}) {
+  if (!ui.groups.has(k)) return;
+  ui.group = k;
+  savePrefs({ groups: { ...prefs.groups, [groupPrefKey()]: k } });
+  ui.focusId = null;
+  render();
+  window.scrollTo({ top: 0 });
+  const ids = ui.visible;
+  const id = pick === 'last' ? ids.at(-1) : pick === 'first' ? ids[0] : ids.find((x) => !reviewed(cardById.get(x))) || ids[0];
+  if (id) setFocus(id, { scroll: pick === 'last' });
+}
+
+function adjacentGroup(delta) {
+  const i = ui.keys.indexOf(ui.group);
+  return i === -1 ? null : ui.keys[i + delta] ?? null;
+}
+
+/** Focus a card, switching groups if it's on another one. */
+function goTo(id) {
+  if (ui.visible.includes(id)) return setFocus(id);
+  const card = cardById.get(id);
+  const k = card && groupKey(card);
+  if (!card || !ui.groups.get(k)?.includes(card)) return toast('That string is hidden by the current filter');
+  showGroup(k);
+  setFocus(id);
+}
+
+function pagerHtml() {
+  const i = ui.keys.indexOf(ui.group);
+  const prev = adjacentGroup(-1);
+  const next = adjacentGroup(1);
+  const name = (k) => esc(ui.groupBy === 'file' ? shortPath(k) : k);
+  return `
+    <nav class="group-pager" aria-label="Screens">
+      ${prev != null ? `<button class="btn small ghost" data-action="prev-group">← ${name(prev)}</button>` : '<span></span>'}
+      <span class="muted">${i + 1} of ${ui.keys.length}</span>
+      ${next != null ? `<button class="btn small primary" data-action="next-group">Next: ${name(next)} <kbd>]</kbd></button>` : '<span></span>'}
+    </nav>`;
+}
+
 function buildGroup({ k, i, cards: list2 }) {
   const sec = document.createElement('section');
   sec.className = 'group';
@@ -461,6 +520,7 @@ function buildGroup({ k, i, cards: list2 }) {
   const frag = document.createDocumentFragment();
   for (const c of list2) frag.appendChild(cardEl(c));
   sec.appendChild(frag);
+  if (!ui.query && ui.keys.length > 1) sec.insertAdjacentHTML('beforeend', pagerHtml());
   return sec;
 }
 
@@ -522,7 +582,8 @@ function renderSidebar(keys, groups) {
         const pct = list.length ? Math.round((done / list.length) * 100) : 0;
         const name = ui.groupBy === 'file' ? shortPath(k) : k;
         const hasShot = ui.groupBy === 'screen' && state.screenshots[slugify(k)];
-        return `<button class="group-link ${pct === 100 ? 'done' : ''}" data-target="group-${i}" title="${esc(k)}"><span class="name">${esc(name)}${hasShot ? ' <span class="shot-dot" title="Has a screenshot">◧</span>' : ''}</span><span class="num">${done}/${list.length}</span><span class="mini"><span style="width:${pct}%"></span></span></button>`;
+        const active = !ui.query && k === ui.group ? 'active' : '';
+        return `<button class="group-link ${pct === 100 ? 'done' : ''} ${active}" data-target="group-${i}" data-key="${esc(k)}" title="${esc(k)}"><span class="name">${esc(name)}${hasShot ? ' <span class="shot-dot" title="Has a screenshot">◧</span>' : ''}</span><span class="num">${done}/${list.length}</span><span class="mini"><span style="width:${pct}%"></span></span></button>`;
       })
       .join('');
 }
@@ -583,7 +644,7 @@ function renderFocusBar() {
   const left = ui.visible.filter((id) => !reviewed(cardById.get(id))).length;
   bar.innerHTML = `
     <button class="btn small ghost" data-action="prev" ${i <= 0 ? 'disabled' : ''}>← Previous <kbd>K</kbd></button>
-    <span><b>${i + 1}</b> of ${ui.visible.length} · ${left} left to review</span>
+    <span><b>${i + 1}</b> of ${ui.visible.length}${ui.query ? '' : ` in ${esc(ui.group)}`} · ${left} left to review</span>
     <button class="btn small ghost" data-action="next" ${i >= ui.visible.length - 1 ? 'disabled' : ''}>Next <kbd>J</kbd> →</button>`;
 }
 
@@ -771,6 +832,12 @@ function setFocus(id, { scroll = true } = {}) {
 function move(delta) {
   if (!ui.visible.length) return;
   const i = ui.visible.indexOf(ui.focusId);
+  const edge = delta > 0 ? i === ui.visible.length - 1 : i === 0;
+  const over = !ui.query && edge ? adjacentGroup(Math.sign(delta)) : null;
+  if (over != null) {
+    showGroup(over, { pick: delta > 0 ? 'first' : 'last' });
+    return toast(`Now on ${over}`);
+  }
   const next = i === -1 ? (delta > 0 ? 0 : ui.visible.length - 1) : Math.min(ui.visible.length - 1, Math.max(0, i + delta));
   setFocus(ui.visible[next]);
 }
@@ -779,8 +846,14 @@ function nextUnrated() {
   const start = Math.max(0, ui.visible.indexOf(ui.focusId) + 1);
   const order = [...ui.visible.slice(start), ...ui.visible.slice(0, start)];
   const id = order.find((x) => !reviewed(cardById.get(x)) && isLive(cardById.get(x)));
-  if (id) setFocus(id);
-  else toast('Everything in view is reviewed');
+  if (id) return setFocus(id);
+  // This screen is done: go to the next one with something left.
+  const from = Math.max(0, ui.keys.indexOf(ui.group));
+  const rest = [...ui.keys.slice(from + 1), ...ui.keys.slice(0, from)];
+  const k = !ui.query && rest.find((x) => ui.groups.get(x).some((c) => isLive(c) && !reviewed(c)));
+  if (!k) return toast('Everything in view is reviewed');
+  showGroup(k);
+  toast(`Now on ${k}`);
 }
 
 function setMode(mode) {
@@ -993,7 +1066,7 @@ function renderExport() {
   if (text) {
     promptSaveTimer = setTimeout(async () => {
       const res = await fetch('/api/prompt', { method: 'PUT', body: text }).catch(() => null);
-      $('#export-saved').innerHTML = res && res.ok ? 'Saved to <code>.copy-review/prompt.md</code>. In Claude Code, say “apply my copy feedback”.' : '';
+      $('#export-saved').innerHTML = res && res.ok ? 'Saved to <code>.copyproof/prompt.md</code>. In Claude Code, say “apply my copy feedback”.' : '';
     }, 300);
   } else $('#export-saved').textContent = '';
 }
@@ -1101,6 +1174,8 @@ function bind() {
   groupBy.addEventListener('change', () => {
     ui.groupBy = groupBy.value;
     savePrefs({ groupBy: ui.groupBy });
+    ui.group = null;
+    ui.focusId = null;
     render();
   });
   const auto = $('#auto-advance');
@@ -1122,6 +1197,7 @@ function bind() {
   $('#sidebar').addEventListener('click', (e) => {
     const link = e.target.closest('.group-link');
     if (!link) return;
+    if (!ui.query) return showGroup(link.dataset.key);
     if (!document.getElementById(link.dataset.target)) {
       cancelIdle();
       drainPending(Infinity);
@@ -1143,6 +1219,8 @@ function bind() {
     }
     if (act?.dataset.action === 'prev') return move(-1);
     if (act?.dataset.action === 'next') return move(1);
+    if (act?.dataset.action === 'prev-group' && adjacentGroup(-1) != null) return showGroup(adjacentGroup(-1));
+    if (act?.dataset.action === 'next-group' && adjacentGroup(1) != null) return showGroup(adjacentGroup(1));
     const cardEl2 = e.target.closest('.card');
     if (!cardEl2) return;
     const card = cardById.get(cardEl2.dataset.id);
@@ -1222,8 +1300,7 @@ function bind() {
     else if (a === 'clear-box' && card) saveBox(panelItem(card), null);
     else if (a === 'box' && !ui.drawing) {
       const target = cardOfItem.get(act.dataset.item);
-      if (target && ui.visible.includes(target.id)) setFocus(target.id);
-      else if (target) toast('That string is hidden by the current filter');
+      if (target) goTo(target.id);
     }
   });
   bindDrawing(panel);
@@ -1273,7 +1350,7 @@ function bind() {
     $('#summary-dialog').close();
     const card = liveCards().find((c) => c.lead.screen === btn.dataset.screen && !reviewed(c)) || liveCards().find((c) => c.lead.screen === btn.dataset.screen);
     if (!card) return;
-    if (!ui.visible.includes(card.id)) {
+    if (!matchesFilter(card) || !matchesKind(card) || !matchesQuery(card)) {
       ui.filter = 'all';
       ui.kind = 'all';
       ui.query = '';
@@ -1282,7 +1359,7 @@ function bind() {
       $$('#filters button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === 'all')));
       render();
     }
-    setFocus(card.id);
+    goTo(card.id);
   });
   $('#export-target').addEventListener('change', renderExport);
   $('#export-max').addEventListener('change', renderExport);
@@ -1346,6 +1423,11 @@ function onKey(e) {
   if (k === '?') return handled(), $('#help-dialog').showModal();
   if (k === 'e') return handled(), openExport();
   if (k === 'n') return handled(), nextUnrated();
+  if ((k === ']' || k === '[') && !ui.query) {
+    handled();
+    const g = adjacentGroup(k === ']' ? 1 : -1);
+    return g == null ? toast(k === ']' ? 'This is the last screen' : 'This is the first screen') : showGroup(g);
+  }
   if (k === 'f') return handled(), setMode(ui.mode === 'focus' ? 'list' : 'focus');
   if (k === 'a') {
     handled();
@@ -1386,7 +1468,7 @@ async function load() {
 function apply(data) {
   Object.assign(state, data);
   state.feedback.items ||= {};
-  document.title = `Copy Review · ${state.copy.project}`;
+  document.title = `Copyproof · ${state.copy.project}`;
   $('#project-name').textContent = state.copy.project;
   ui.editingId = null;
   buildCards();

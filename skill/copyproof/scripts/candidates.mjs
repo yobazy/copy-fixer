@@ -14,7 +14,7 @@ const p = paths(args._[0]);
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit', '.astro', '.output',
   '.expo', '.turbo', '.cache', '.vercel', '.netlify', 'coverage', 'Pods', 'DerivedData', '.gradle',
-  'target', 'vendor', '.venv', 'venv', '__pycache__', '.idea', '.vscode', '.copy-review', '.claude',
+  'target', 'vendor', '.venv', 'venv', '__pycache__', '.idea', '.vscode', '.copyproof', '.copy-review', '.claude',
   'storybook-static', 'generated', '__generated__', 'scripts', 'evals', 'migrations', 'seeds', 'benchmarks',
 ]);
 

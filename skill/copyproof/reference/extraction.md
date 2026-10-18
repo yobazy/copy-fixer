@@ -55,7 +55,7 @@ When unsure whether a string reaches the user, trace one hop (where is this erro
 
 ## Output
 
-Write JSON to the path you were given (normally `.copy-review/scan/<name>.json`):
+Write JSON to the path you were given (normally `.copyproof/scan/<name>.json`):
 
 ```json
 {

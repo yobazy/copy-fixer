@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { itemId, mergeScan } from '../skill/copy-review/lib/merge.js';
+import { itemId, mergeScan } from '../skill/copyproof/lib/merge.js';
 
 const NOW = '2026-10-17T00:00:00.000Z';
 const item = (text, line, extra = {}) => ({ text, file: 'src/A.tsx', line, kind: 'button', screen: 'Home', ...extra });

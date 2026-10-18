@@ -1,7 +1,7 @@
 node_modules/
 .DS_Store
 *.tmp
-test/fixtures/**/.copy-review/feedback.json
-test/fixtures/**/.copy-review/prompt.md
-test/fixtures/**/.copy-review/voice.md
+test/fixtures/**/.copyproof/feedback.json
+test/fixtures/**/.copyproof/prompt.md
+test/fixtures/**/.copyproof/voice.md
 .playwright-mcp/

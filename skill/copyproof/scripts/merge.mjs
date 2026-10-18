@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Merges extraction output into .copy-review/copy.json, keeping ratings across rescans.
+// Merges extraction output into .copyproof/copy.json, keeping ratings across rescans.
 //
 //   node merge.mjs [project] [--full] [--keep-scan] [scan.json ...]
 //
-// With no scan files given, reads every .json in .copy-review/scan/ and deletes them after.
+// With no scan files given, reads every .json in .copyproof/scan/ and deletes them after.
 // --full treats the scan as covering the whole project, so anything missing is marked removed.
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';

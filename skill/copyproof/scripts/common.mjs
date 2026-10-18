@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { slugify } from '../lib/core.js';
 
 export const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const DATA_DIR = '.copy-review';
+export const DATA_DIR = '.copyproof';
+const OLD_DATA_DIR = '.copy-review'; // the name before the rename
 
 export function parseArgs(argv) {
   const args = { _: [] };
@@ -24,6 +25,8 @@ export function parseArgs(argv) {
 export function paths(projectArg) {
   const root = resolve(projectArg || '.');
   const data = join(root, DATA_DIR);
+  const old = join(root, OLD_DATA_DIR);
+  if (!existsSync(data) && existsSync(old)) renameSync(old, data);
   return {
     root,
     data,

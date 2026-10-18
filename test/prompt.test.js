@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   buildPrompt, findPlaceholders, groupEntries, isFlagged, isReviewed, selectForPrompt, similarity, slugify, wordDiff,
-} from '../skill/copy-review/lib/core.js';
+} from '../skill/copyproof/lib/core.js';
 
 const copy = {
   project: 'demo',
@@ -35,7 +35,7 @@ test('flags low ratings and anything with notes, skips removed items', () => {
 });
 
 test('agent prompt has locations, feedback, placeholders and edit rules', () => {
-  const out = buildPrompt({ copy, feedback, voice: 'Plain and warm.', screenshots: { checkout: '.copy-review/screenshots/checkout.png' } });
+  const out = buildPrompt({ copy, feedback, voice: 'Plain and warm.', screenshots: { checkout: '.copyproof/screenshots/checkout.png' } });
   assert.match(out, /^# Copy revision: demo/);
   assert.match(out, /## Voice and tone\n\nPlain and warm\./);
   assert.match(out, /"Nice and clear"/);

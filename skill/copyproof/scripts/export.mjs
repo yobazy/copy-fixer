@@ -3,7 +3,7 @@
 //
 //   node export.mjs [project] [--target agent|chat] [--max-rating 3] [--no-exemplars] [--out file]
 //
-// Prints the prompt, and writes it to .copy-review/prompt.md (or --out).
+// Prints the prompt, and writes it to .copyproof/prompt.md (or --out).
 import { buildPrompt, selectForPrompt } from '../lib/core.js';
 import { findScreenshots, parseArgs, paths, readJson, readText, writeAtomic } from './common.mjs';
 

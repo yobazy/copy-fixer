@@ -73,7 +73,7 @@ function onPath(cmd) {
 
 function openInEditor(file, line) {
   const target = `${file}:${line || 1}`;
-  const custom = process.env.COPY_REVIEW_EDITOR;
+  const custom = (process.env.COPYPROOF_EDITOR || process.env.COPY_REVIEW_EDITOR);
   if (custom) {
     const [cmd, ...rest] = custom.split(' ');
     const argv = rest.map((a) => a.replace('{file}', file).replace('{line}', String(line || 1)));
@@ -217,9 +217,9 @@ function listen(port, attemptsLeft) {
   });
   server.listen(port, '127.0.0.1', () => {
     const url = `http://localhost:${server.address().port}`;
-    console.log(`Copy review for ${p.root}`);
+    console.log(`Copyproof for ${p.root}`);
     console.log(`  ${url}`);
-    console.log('  Ctrl+C to stop. Feedback saves to .copy-review/feedback.json as you go.');
+    console.log('  Ctrl+C to stop. Feedback saves to .copyproof/feedback.json as you go.');
     if (!args['no-open']) {
       const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'explorer' : 'xdg-open';
       spawn(opener, [url], { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
