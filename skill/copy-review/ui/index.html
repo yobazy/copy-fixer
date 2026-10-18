@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Copy Review</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%231d1c1a%22/%3E%3Ctext x=%2216%22 y=%2230%22 font-family=%22Georgia%22 font-size=%2228%22 font-weight=%22700%22 fill=%22%23f6f5f2%22 text-anchor=%22middle%22%3E%E2%80%9C%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">“</span>
+      <div>
+        <h1 id="project-name">Copy review</h1>
+        <button class="progress-text" id="progress-text" title="See the summary">Loading…</button>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="save-state" id="save-state" aria-live="polite"></span>
+      <button class="btn ghost" id="undo" title="Undo (⌘Z)" disabled>Undo</button>
+      <button class="btn ghost" id="open-voice">Voice notes</button>
+      <button class="btn ghost icon" id="open-help" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+      <button class="btn primary" id="open-export">Generate prompt</button>
+    </div>
+    <div class="toolbar">
+      <label class="search">
+        <span class="visually-hidden">Search copy</span>
+        <input id="search" type="search" placeholder="Search text, file, screen…  ( / )" autocomplete="off">
+      </label>
+      <div class="segmented" id="filters" role="group" aria-label="Filter">
+        <button data-filter="all" aria-pressed="true">All</button>
+        <button data-filter="unrated">To review</button>
+        <button data-filter="flagged">Flagged</button>
+        <button data-filter="fresh">New &amp; revised</button>
+        <button data-filter="removed" hidden>Removed</button>
+      </div>
+      <label class="select">
+        <span class="visually-hidden">Kind</span>
+        <select id="kind-filter"><option value="all">All kinds</option></select>
+      </label>
+      <label class="select">
+        <span>Group by</span>
+        <select id="group-by">
+          <option value="screen">Screen</option>
+          <option value="file">File</option>
+          <option value="kind">Kind</option>
+        </select>
+      </label>
+      <span class="spacer"></span>
+      <div class="segmented" id="view-mode" role="group" aria-label="View">
+        <button data-mode="list" aria-pressed="true" title="All strings (F)">List</button>
+        <button data-mode="focus" title="One string at a time (F)">Focus</button>
+      </div>
+      <label class="toggle" title="Jump to the next string after rating (A)">
+        <input type="checkbox" id="auto-advance"> Auto-advance
+      </label>
+      <label class="toggle" title="Tighter cards">
+        <input type="checkbox" id="compact"> Compact
+      </label>
+    </div>
+    <div class="progress-bar" aria-hidden="true"><span id="progress-fill"></span></div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Groups"></nav>
+    <main id="list" class="list" tabindex="-1"></main>
+    <aside class="panel" id="panel" aria-label="Screen preview"></aside>
+  </div>
+
+  <dialog id="export-dialog" class="modal wide">
+    <form method="dialog" class="modal-inner">
+      <header class="modal-head">
+        <h2>Revision prompt</h2>
+        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+      </header>
+      <div class="export-options">
+        <fieldset class="segmented" id="export-target">
+          <legend class="visually-hidden">Target</legend>
+          <label><input type="radio" name="target" value="agent" checked> Coding agent (edits files)</label>
+          <label><input type="radio" name="target" value="chat"> Any chat model</label>
+        </fieldset>
+        <label class="select">
+          <span>Include ratings</span>
+          <select id="export-max">
+            <option value="1">1 only</option>
+            <option value="2">2 and below</option>
+            <option value="3" selected>3 and below</option>
+            <option value="4">4 and below</option>
+          </select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="export-exemplars" checked> Add 5-rated copy as tone examples</label>
+      </div>
+      <p class="export-summary" id="export-summary"></p>
+      <textarea id="export-text" class="export-text" readonly spellcheck="false"></textarea>
+      <footer class="modal-foot">
+        <span class="muted" id="export-saved"></span>
+        <button type="button" class="btn primary" id="export-copy">Copy prompt</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="summary-dialog" class="modal wide">
+    <form method="dialog" class="modal-inner">
+      <header class="modal-head">
+        <h2>Review summary</h2>
+        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+      </header>
+      <div id="summary-body" class="summary"></div>
+      <footer class="modal-foot">
+        <span class="muted">Screens are sorted worst first.</span>
+        <button type="button" class="btn primary" id="summary-export">Generate prompt</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="voice-dialog" class="modal">
+    <form method="dialog" class="modal-inner">
+      <header class="modal-head">
+        <h2>Voice and tone notes</h2>
+        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+      </header>
+      <p class="muted">These notes go at the top of every prompt, and they're saved to <code>.copy-review/voice.md</code>.</p>
+      <textarea id="voice-text" class="voice-text" placeholder="e.g. Plain, warm, a little dry. Say what happened, then what to do next. Sentence case everywhere. Never say &quot;Oops&quot;."></textarea>
+      <footer class="modal-foot">
+        <span class="muted" id="voice-saved"></span>
+        <button type="button" class="btn primary" id="voice-save">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog" class="modal">
+    <form method="dialog" class="modal-inner">
+      <header class="modal-head">
+        <h2>Keyboard shortcuts</h2>
+        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+      </header>
+      <dl class="shortcuts">
+        <div><dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>Next / previous string</dd></div>
+        <div><dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>Rate (again to clear)</dd></div>
+        <div><dt><kbd>Enter</kbd></dt><dd>Rewrite the text</dd></div>
+        <div><dt><kbd>C</kbd></dt><dd>Add a comment</dd></div>
+        <div><dt><kbd>N</kbd></dt><dd>Next string to review</dd></div>
+        <div><dt><kbd>F</kbd></dt><dd>Focus mode on / off</dd></div>
+        <div><dt><kbd>M</kbd></dt><dd>Mark where it is on the screenshot</dd></div>
+        <div><dt><kbd>Y</kbd> <kbd>R</kbd></dt><dd>Accept / send back a revision</dd></div>
+        <div><dt><kbd>O</kbd></dt><dd>Open the source in your editor</dd></div>
+        <div><dt><kbd>⌘Z</kbd></dt><dd>Undo</dd></div>
+        <div><dt><kbd>A</kbd></dt><dd>Toggle auto-advance</dd></div>
+        <div><dt><kbd>/</kbd></dt><dd>Search</dd></div>
+        <div><dt><kbd>E</kbd></dt><dd>Generate the prompt</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Cancel, leave a text box, close</dd></div>
+      </dl>
+    </form>
+  </dialog>
+
+  <dialog id="lightbox" class="lightbox">
+    <form method="dialog">
+      <button class="lightbox-close btn ghost icon" aria-label="Close">✕</button>
+      <div id="lightbox-frame"></div>
+    </form>
+  </dialog>
+
+  <input type="file" id="shot-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

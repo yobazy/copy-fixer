@@ -1,0 +1,11 @@
+{
+  "name": "copy-fixer",
+  "private": true,
+  "type": "module",
+  "description": "Claude Code skill for reviewing and fixing the user-facing copy in any project",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "demo": "node skill/copy-review/scripts/serve.mjs test/fixtures/demo-app"
+  },
+  "engines": { "node": ">=18" }
+}

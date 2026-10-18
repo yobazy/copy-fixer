@@ -1,0 +1,298 @@
+{
+  "version": 1,
+  "project": "demo-app",
+  "scannedAt": "2026-10-18T07:27:05.097Z",
+  "screens": [
+    {
+      "name": "Checkout",
+      "description": "Payment and order review",
+      "route": "preview/checkout.html",
+      "slug": "checkout"
+    },
+    {
+      "name": "Inbox",
+      "description": "Message list and empty state",
+      "route": "preview/inbox.html",
+      "slug": "inbox"
+    }
+  ],
+  "items": [
+    {
+      "id": "b2011ac852",
+      "text": "No messages",
+      "file": "locales/en.json",
+      "line": 4,
+      "kind": "heading",
+      "screen": "Inbox",
+      "context": "Empty inbox",
+      "key": "inbox.empty.title",
+      "usedIn": [
+        "src/screens/Inbox.tsx:7"
+      ],
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.12174,
+        "y": 0.25889,
+        "w": 0.75652,
+        "h": 0.04056,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "e92604a79b",
+      "text": "There is nothing to display at this time.",
+      "file": "locales/en.json",
+      "line": 5,
+      "kind": "empty-state",
+      "screen": "Inbox",
+      "key": "inbox.empty.body",
+      "usedIn": [
+        "src/screens/Inbox.tsx:8"
+      ],
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.12174,
+        "y": 0.29722,
+        "w": 0.75652,
+        "h": 0.03389,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "7da321702d",
+      "text": "Click here to compose a new message",
+      "file": "locales/en.json",
+      "line": 6,
+      "kind": "button",
+      "screen": "Inbox",
+      "key": "inbox.empty.cta",
+      "usedIn": [
+        "src/screens/Inbox.tsx:9"
+      ],
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.12174,
+        "y": 0.34667,
+        "w": 0.75652,
+        "h": 0.06,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "a9261615fa",
+      "text": "You have {{count}} unread messages",
+      "file": "locales/en.json",
+      "line": 8,
+      "kind": "body",
+      "screen": "Inbox",
+      "context": "Header count above the message list",
+      "key": "inbox.unread",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.52089,
+        "y": 0.02139,
+        "w": 0.40085,
+        "h": 0.03056,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "68a1a8049c",
+      "text": "Payment successful!",
+      "file": "src/screens/Checkout.tsx",
+      "line": 10,
+      "kind": "toast",
+      "screen": "Checkout",
+      "context": "Toast after the payment goes through",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.58889,
+        "w": 0.84348,
+        "h": 0.05444,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "e39393f6c7",
+      "text": "Oops! Something went wrong",
+      "file": "src/screens/Checkout.tsx",
+      "line": 12,
+      "kind": "error",
+      "screen": "Checkout",
+      "context": "Shown under the form when the payment fails for any reason",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.40556,
+        "w": 0.84348,
+        "h": 0.05444,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "71cfaef6a1",
+      "text": "Checkout",
+      "file": "src/screens/Checkout.tsx",
+      "line": 18,
+      "kind": "heading",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.01667,
+        "w": 0.21398,
+        "h": 0.04222,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "fb21761512",
+      "text": "Hey {name}, you're almost there. Review your order below.",
+      "file": "src/screens/Checkout.tsx",
+      "line": 19,
+      "kind": "body",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.09444,
+        "w": 0.84348,
+        "h": 0.05889,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "521c6086f4",
+      "text": "Card Number",
+      "file": "src/screens/Checkout.tsx",
+      "line": 20,
+      "kind": "label",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.315,
+        "w": 0.84348,
+        "h": 0.03056,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "b960e05bdb",
+      "text": "Enter your card number here",
+      "file": "src/screens/Checkout.tsx",
+      "line": 21,
+      "kind": "placeholder",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.34333,
+        "w": 0.84348,
+        "h": 0.05778,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "a9faf697b2",
+      "text": "Submit",
+      "file": "src/screens/Checkout.tsx",
+      "line": 23,
+      "kind": "button",
+      "screen": "Checkout",
+      "context": "Primary button that charges the card",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.47556,
+        "w": 0.6322,
+        "h": 0.06,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "9c485f2a0f",
+      "text": "Cancel",
+      "file": "src/screens/Checkout.tsx",
+      "line": 24,
+      "kind": "button",
+      "screen": "Checkout",
+      "context": "Secondary button next to Submit",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.71481,
+        "y": 0.47556,
+        "w": 0.20693,
+        "h": 0.06,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "c7c33f916d",
+      "text": "Close checkout",
+      "file": "src/screens/Checkout.tsx",
+      "line": 25,
+      "kind": "accessibility",
+      "screen": "Checkout",
+      "context": "Screen reader label for the × button",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.83478,
+        "y": 0.01556,
+        "w": 0.08696,
+        "h": 0.04444,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "024f56179a",
+      "text": "By clicking Submit you agree to our Terms of Service.",
+      "file": "src/screens/Checkout.tsx",
+      "line": 26,
+      "kind": "legal",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.07826,
+        "y": 0.54222,
+        "w": 0.84348,
+        "h": 0.02889,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "199055ccde",
+      "text": "Total: {total}",
+      "file": "src/screens/Checkout.tsx",
+      "line": 27,
+      "kind": "label",
+      "screen": "Checkout",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.1087,
+        "y": 0.24889,
+        "w": 0.24772,
+        "h": 0.03389,
+        "source": "auto"
+      }
+    },
+    {
+      "id": "ecec8f96e1",
+      "text": "Cancel",
+      "file": "src/screens/Inbox.tsx",
+      "line": 10,
+      "kind": "button",
+      "screen": "Inbox",
+      "context": "Dismisses the empty state",
+      "firstSeen": "2026-10-18T07:27:05.097Z",
+      "box": {
+        "x": 0.12174,
+        "y": 0.40889,
+        "w": 0.75652,
+        "h": 0.06,
+        "source": "auto"
+      }
+    }
+  ]
+}

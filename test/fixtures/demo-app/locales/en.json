@@ -1,0 +1,10 @@
+{
+  "inbox": {
+    "empty": {
+      "title": "No messages",
+      "body": "There is nothing to display at this time.",
+      "cta": "Click here to compose a new message"
+    },
+    "unread": "You have {{count}} unread messages"
+  }
+}
