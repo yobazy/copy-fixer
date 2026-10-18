@@ -229,6 +229,9 @@ kbd {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow);
   scroll-margin: calc(var(--top, 120px) + 20px);
+  /* Skip layout and paint for off-screen cards; matters with thousands of them. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 190px;
 }
 .card::before {
   content: ""; position: absolute; left: -1px; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0;
@@ -321,12 +324,12 @@ del + ins { margin-left: 3px; }
   border: 1px solid var(--border); background: var(--surface); cursor: pointer;
   transition: transform 0.08s ease, background 0.12s;
 }
-.rate .num { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.1; }
-.rate .lbl { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.rate { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.1; }
+.rate::after { content: attr(data-label); font-size: 11px; font-weight: 400; color: var(--muted); white-space: nowrap; }
 .rate:hover { border-color: var(--border-strong); background: var(--surface-2); }
 .rate:active { transform: scale(0.95); }
 .rate[aria-checked="true"] { border-color: transparent; }
-.rate[aria-checked="true"] .num, .rate[aria-checked="true"] .lbl { color: var(--on-rating); }
+.rate[aria-checked="true"], .rate[aria-checked="true"]::after { color: var(--on-rating); }
 .rate[data-v="1"][aria-checked="true"] { background: var(--r1); }
 .rate[data-v="2"][aria-checked="true"] { background: var(--r2); }
 .rate[data-v="3"][aria-checked="true"] { background: var(--r3); }
@@ -337,7 +340,7 @@ del + ins { margin-left: 3px; }
 
 .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
 /* Tags only where they're useful: the card you're on, low ratings, or already tagged. */
-.card:not(.focused):not(.show-tags) .tags { display: none; }
+.card:not(.focused):not(.show-tags) .tags, .tags:empty { display: none; }
 .tag {
   height: 26px; padding: 0 9px; border-radius: 13px;
   border: 1px solid var(--border); background: none; color: var(--muted); font-size: 12px; cursor: pointer;
@@ -436,7 +439,7 @@ body.compact .copy-text, body.compact .edit-box { font-size: 15.5px; }
 body.compact .context { margin-bottom: 6px; font-size: 12px; }
 body.compact .card-meta { margin-bottom: 4px; }
 body.compact .rate { width: 40px; height: 32px; }
-body.compact .rate .lbl { display: none; }
+body.compact .rate::after { display: none; }
 body.compact .card:not(.focused) .card-actions { display: none; }
 body.compact .group-head h2 { font-size: 18px; }
 
@@ -516,7 +519,7 @@ body.compact .group-head h2 { font-size: 18px; }
   .search, .search input { width: 100%; }
   .toolbar .spacer { display: none; }
   .rate { width: auto; flex: 1; }
-  .rate .lbl { font-size: 10px; }
+  .rate::after { font-size: 10px; }
   .shortcuts { grid-template-columns: 1fr; }
   .card { scroll-margin: 20px; }
   body.mode-focus .card .copy-text, body.mode-focus .edit-box { font-size: 21px; }

@@ -321,10 +321,11 @@ function cardInner(card) {
   const rating = [1, 2, 3, 4, 5]
     .map(
       (v) =>
-        `<button class="rate" role="radio" data-action="rate" data-v="${v}" aria-checked="${fb.rating === v}" aria-label="${v}, ${RATING_LABELS[v]}"><span class="num">${v}</span><span class="lbl">${RATING_LABELS[v]}</span></button>`
+        `<button class="rate" role="radio" data-action="rate" data-v="${v}" data-label="${RATING_LABELS[v]}" aria-checked="${fb.rating === v}" aria-label="${v}, ${RATING_LABELS[v]}">${v}</button>`
     )
     .join('');
-  const tags = TAGS.map((t) => `<button class="tag" data-action="tag" data-tag="${t.id}" aria-pressed="${(fb.tags || []).includes(t.id)}">${esc(t.label)}</button>`).join('');
+  // Tag chips are most of a card's DOM, so only cards that show them get them; focusing a card adds them.
+  const tags = card.id === ui.focusId || needsTags(fb) ? tagsHtml(fb) : '';
   const low = fb.rating != null && fb.rating <= 2;
   const explained = (fb.tags || []).length || (fb.suggestion || '').trim() || (fb.comment || '').trim();
   const nudge = low && !explained && ui.editingId !== card.id ? `<p class="nudge">What's wrong with it? Pick a tag, press <kbd>Enter</kbd> to rewrite it, or <kbd>C</kbd> to say why.</p>` : '';
@@ -346,9 +347,17 @@ function cardInner(card) {
     ${revisionBlock(card, fb)}
     <div class="rating" role="radiogroup" aria-label="Rating">${rating}</div>
     ${nudge}
-    <div class="tags" role="group" aria-label="Problems">${tags}</div>
+    <div class="tags" role="group" aria-label="Problems" data-tags-slot>${tags}</div>
     ${comment}
     ${actions ? `<div class="card-actions">${actions}</div>` : ''}`;
+}
+
+function needsTags(fb) {
+  return (fb.tags || []).length || (fb.rating != null && fb.rating <= 3) || fb.verdict === 'rejected';
+}
+
+function tagsHtml(fb) {
+  return TAGS.map((t) => `<button class="tag" data-action="tag" data-tag="${t.id}" aria-pressed="${(fb.tags || []).includes(t.id)}">${esc(t.label)}</button>`).join('');
 }
 
 function cardEl(card) {
@@ -356,7 +365,7 @@ function cardEl(card) {
   const fb = cardFb(card);
   el.className = 'card';
   if (card.lead.status === 'removed') el.classList.add('removed');
-  if ((fb.tags || []).length || (fb.rating != null && fb.rating <= 3) || fb.verdict === 'rejected') el.classList.add('show-tags');
+  if (needsTags(fb)) el.classList.add('show-tags');
   if (card.id === ui.focusId) el.classList.add('focused');
   el.dataset.id = card.id;
   el.dataset.rating = fb.rating ?? '';
@@ -425,24 +434,66 @@ function render() {
     const [title, body] = ui.query ? ['No matches', 'Try a different search.'] : msg;
     list.insertAdjacentHTML('beforeend', `<div class="empty"><strong>${title}</strong>${body}</div>`);
   }
-  keys.forEach((k, i) => {
-    const sec = document.createElement('section');
-    sec.className = 'group';
-    sec.id = `group-${i}`;
-    sec.dataset.key = k;
-    const list2 = groups.get(k);
-    const done = list2.filter(reviewed).length;
-    const info = ui.groupBy === 'screen' ? screenInfo(k) : {};
-    const title = ui.groupBy === 'file' ? `<code>${esc(k)}</code>` : esc(k);
-    sec.innerHTML = `<div class="group-head"><div><h2>${title}</h2>${info.description ? `<span class="desc">${esc(info.description)}</span>` : ''}</div><span class="count">${done}/${list2.length}</span></div>`;
-    for (const c of list2) sec.appendChild(cardEl(c));
-    list.appendChild(sec);
-  });
+  // Big projects have thousands of cards: render the top now and the rest in idle chunks.
+  pending = keys.map((k, i) => ({ k, i, cards: groups.get(k) }));
+  cancelIdle();
+  drainPending(120);
+  if (pending.length) scheduleIdle();
   renderSidebar(keys, groups);
   renderCounts();
   renderFocusBar();
   renderPanel();
   if (ui.focusId) setFocus(ui.focusId, { scroll: ui.mode === 'focus' });
+}
+
+let pending = [];
+let idleHandle = null;
+
+function buildGroup({ k, i, cards: list2 }) {
+  const sec = document.createElement('section');
+  sec.className = 'group';
+  sec.id = `group-${i}`;
+  sec.dataset.key = k;
+  const done = list2.filter(reviewed).length;
+  const info = ui.groupBy === 'screen' ? screenInfo(k) : {};
+  const title = ui.groupBy === 'file' ? `<code>${esc(k)}</code>` : esc(k);
+  sec.innerHTML = `<div class="group-head"><div><h2>${title}</h2>${info.description ? `<span class="desc">${esc(info.description)}</span>` : ''}</div><span class="count">${done}/${list2.length}</span></div>`;
+  const frag = document.createDocumentFragment();
+  for (const c of list2) frag.appendChild(cardEl(c));
+  sec.appendChild(frag);
+  return sec;
+}
+
+/** Append pending groups until about `budget` cards are on the page (Infinity = all). */
+function drainPending(budget) {
+  const list = $('#list');
+  let n = 0;
+  while (pending.length && n < budget) {
+    const g = pending.shift();
+    list.appendChild(buildGroup(g));
+    n += g.cards.length;
+  }
+}
+
+function scheduleIdle() {
+  const step = () => {
+    drainPending(150);
+    if (pending.length) idleHandle = setTimeout(step, 16);
+    else idleHandle = null;
+  };
+  idleHandle = setTimeout(step, 16);
+}
+
+function cancelIdle() {
+  clearTimeout(idleHandle);
+  idleHandle = null;
+}
+
+/** Make sure a card is in the DOM before focusing or scrolling to it. */
+function ensureRendered(id) {
+  if (!pending.length || $(`.card[data-id="${id}"]`)) return;
+  cancelIdle();
+  drainPending(Infinity);
 }
 
 function introHtml() {
@@ -704,9 +755,12 @@ function setFocus(id, { scroll = true } = {}) {
   if (changed && ui.editingId && ui.editingId !== id) commitEdit(cardById.get(ui.editingId), $('[data-edit]')?.value);
   if (changed) ui.drawing = false;
   ui.focusId = id;
+  if (id) ensureRendered(id);
   const el = id && $(`.card[data-id="${id}"]`);
   if (!el) return renderPanel();
   el.classList.add('focused');
+  const slot = $('[data-tags-slot]', el);
+  if (slot && !slot.childElementCount) slot.innerHTML = tagsHtml(cardFb(cardById.get(id)));
   if (scroll) el.scrollIntoView({ block: ui.mode === 'focus' ? 'nearest' : 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   const sec = el.closest('.group');
   $$('.group-link').forEach((l) => l.classList.toggle('active', l.dataset.target === sec?.id));
@@ -1068,6 +1122,10 @@ function bind() {
   $('#sidebar').addEventListener('click', (e) => {
     const link = e.target.closest('.group-link');
     if (!link) return;
+    if (!document.getElementById(link.dataset.target)) {
+      cancelIdle();
+      drainPending(Infinity);
+    }
     const sec = document.getElementById(link.dataset.target);
     const first = $('.card', sec);
     if (ui.mode === 'focus' && first) return setFocus(first.dataset.id);
@@ -1261,7 +1319,7 @@ function bind() {
 function onKey(e) {
   if ($('dialog[open]')) return;
   const t = e.target;
-  const typing = t.matches('textarea, input, select');
+  const typing = t instanceof Element && t.matches('textarea, input, select');
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing) {
     e.preventDefault();
     return undo();

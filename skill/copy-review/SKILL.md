@@ -79,9 +79,13 @@ A screenshot belongs to a screen by its file name: `.copy-review/screenshots/<sl
    1. Navigate there, and get the page into the state that shows the most copy (open the dialog, trigger the empty state, submit the empty form for validation errors).
    2. `node SKILL_DIR/scripts/locate.mjs <project> --screen "<screen name>"` prints a function. Run it with the browser's evaluate tool, saving the result to `.copy-review/boxes-<slug>.json`. It finds each string on the page (text, placeholders, aria-labels, alt text) and returns where it is.
    3. Without scrolling or changing anything, take a **full-page** screenshot to `.copy-review/screenshots/<slug>.png`.
+
+   React Native Web and many single-page apps scroll inside a container, not the page, so a "full-page" screenshot only covers the first screen. Before locating, check for this with `Math.max(...[...document.querySelectorAll('*')].map(e => /(auto|scroll)/.test(getComputedStyle(e).overflowY) ? e.scrollHeight : 0))`. If the result is taller than the viewport, resize the viewport to that height first. Pages that reveal content on scroll need one pass of scrolling top to bottom before you locate.
+
+   The browser tools may only write inside the session's working directory. If `.copy-review/` is outside it, save to a staging folder there and copy the files over.
 4. `node SKILL_DIR/scripts/set-boxes.mjs <project> .copy-review/boxes-*.json`, then delete the `boxes-*.json` files. It lists strings that weren't found. Those usually need another state (an error, a toast), so capture that state as well if it's cheap. Otherwise leave them for the user, who can mark them by hand in the page (`M`).
 
-Screens behind auth: sign in once if there's a dev account or seed user. If not, capture what you can and say which screens are missing.
+Screens behind auth: sign in once if there's a dev account or seed user. Never create accounts or test data against a production backend. Without a login, capture what you can and say which screens are missing. Dev-only pages that render components with sample data, like storybook pages or a `/dev-gallery`, are good stand-ins for screens behind auth. Name them after the screen whose copy they show.
 
 **Native apps**: take one screenshot per screen, without positions.
 - iOS simulator: navigate with deep links (`xcrun simctl openurl booted <url>`), then `xcrun simctl io booted screenshot <path>`.
