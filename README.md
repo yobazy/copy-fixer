@@ -73,9 +73,11 @@ The scripts run on their own:
 ```bash
 node skill/copyproof/scripts/candidates.mjs <project>          # files likely to contain copy
 node skill/copyproof/scripts/merge.mjs <project> [--full]      # merge .copyproof/scan/*.json into copy.json
+                                                               # (keeps strings a scan skipped if they're still in the source; --drop-missing to trust the scan)
 node skill/copyproof/scripts/serve.mjs <project>               # open the review page
 node skill/copyproof/scripts/export.mjs <project> --target chat  # print the prompt
 node skill/copyproof/scripts/locate.mjs <project> --screen Home  # browser snippet that finds strings on a page
+                                                                 # (or fetch it from the running review server: /api/locate?screen=Home)
 node skill/copyproof/scripts/set-boxes.mjs <project> boxes.json  # save what it found
 ```
 

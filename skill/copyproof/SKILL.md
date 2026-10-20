@@ -54,7 +54,7 @@ Read `SKILL_DIR/reference/extraction.md`. It defines what counts as copy, where 
 - its output path, `<project>/.copyproof/scan/<batch-name>.json`,
 - the screen names already in use (from `copy.json` on a rescan, or that you've settled on), so groupings line up.
 
-Tell subagents to report only the item count and anything uncertain, not the strings.
+Tell subagents to extract **every** string in each file they list (not only errors, or only labels), to put plural variants in separate items rather than joining them with " / ", and to report only the item count and anything uncertain, not the strings.
 
 ## 3. Merge
 
@@ -63,7 +63,14 @@ node SKILL_DIR/scripts/merge.mjs <project>          # incremental: only the file
 node SKILL_DIR/scripts/merge.mjs <project> --full   # the scan covered everything; anything missing is gone
 ```
 
-Use `--full` on a first scan and on any full rescan. Merge assigns stable ids, keeps feedback, marks new/revised/removed strings, deletes `scan/`, and prints a summary. Read the warnings. If counts look wrong (for example 0 errors in an app with forms), go back and fill the gaps before opening the review.
+Use `--full` on a first scan and on any full rescan. Merge assigns stable ids, keeps feedback, marks new/revised/removed strings, deletes `scan/`, and prints a summary. Read it:
+
+- **kept N strings the scan didn't list**: an extractor skipped strings that are still in the source. Merge keeps them so they don't vanish from the review, but if one file accounts for many, re-extract that file properly.
+- **look like variants joined with " / "**: split those items into one per variant (edit `copy.json` or re-extract the file).
+- **screenshots to retake**: those screens' screenshots were taken before their copy changed, so they show old text. Retake them in step 4.
+- If counts look wrong (for example 0 errors in an app with forms), go back and fill the gaps before opening the review.
+
+`--drop-missing` turns off the keeping and trusts the scan completely, for when you know strings were deleted.
 
 ## 4. Screenshots (optional)
 
@@ -77,7 +84,13 @@ A screenshot belongs to a screen by its file name: `.copyproof/screenshots/<slug
 2. Set the viewport to how users see the app: 390×844 for mobile-first and React Native Web, 1280×800 for desktop.
 3. For each screen with a known `route` (or one you can reach by clicking through):
    1. Navigate there, and get the page into the state that shows the most copy (open the dialog, trigger the empty state, submit the empty form for validation errors).
-   2. `node SKILL_DIR/scripts/locate.mjs <project> --screen "<screen name>"` prints a function. Run it with the browser's evaluate tool, saving the result to `.copyproof/boxes-<slug>.json`. It finds each string on the page (text, placeholders, aria-labels, alt text) and returns where it is.
+   2. Find where each string is (text, placeholders, aria-labels, alt text). Start the review server first (step 5) so the page can fetch the locate function from it, then run this with the browser's evaluate tool, saving the result to `.copyproof/boxes-<slug>.json`:
+
+      ```js
+      async () => (0, eval)(await (await fetch('http://localhost:4477/api/locate?screen=' + encodeURIComponent('<screen name>'))).text())()
+      ```
+
+      Use the port serve printed. If the page's content security policy blocks the fetch, print the same function with `node SKILL_DIR/scripts/locate.mjs <project> --screen "<screen name>"` and paste it into evaluate instead.
    3. Without scrolling or changing anything, take a **full-page** screenshot to `.copyproof/screenshots/<slug>.png`.
 
    React Native Web and many single-page apps scroll inside a container, not the page, so a "full-page" screenshot only covers the first screen. Before locating, check for this with `Math.max(...[...document.querySelectorAll('*')].map(e => /(auto|scroll)/.test(getComputedStyle(e).overflowY) ? e.scrollHeight : 0))`. If the result is taller than the viewport, resize the viewport to that height first. Pages that reveal content on scroll need one pass of scrolling top to bottom before you locate.
@@ -95,7 +108,7 @@ The user can mark where each string is by hand in the review page.
 
 If you can't drive the app at all, tell the user they can drop or paste a screenshot into the panel next to any string.
 
-Replacing a screen's screenshot clears its positions, so locate and screenshot together. After a rescan that changed copy on a screen, recapture that screen so the screenshot shows the new text.
+Replacing a screen's screenshot clears its positions, so locate and screenshot together. After a rescan that changed copy on a screen, recapture that screen so the screenshot shows the new text. Merge lists those screens, and the review page warns on a screenshot that's older than the copy on it.
 
 ## 5. Open the review
 

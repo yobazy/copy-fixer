@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { itemId, mergeScan } from '../skill/copyproof/lib/merge.js';
+import { findInSource, itemId, mergeScan } from '../skill/copyproof/lib/merge.js';
+import { locateSnippet } from '../skill/copyproof/lib/locate.js';
 
 const NOW = '2026-10-17T00:00:00.000Z';
 const item = (text, line, extra = {}) => ({ text, file: 'src/A.tsx', line, kind: 'button', screen: 'Home', ...extra });
@@ -49,7 +50,7 @@ test('rescan keeps feedback, flags new strings, and archives feedback on edited 
   assert.equal(moved.history[0].rating, 2);
   assert.equal(moved.history[0].text, 'Submit');
   assert.equal(second.feedback.items[submitId], undefined);
-  assert.deepEqual(second.stats, { total: 3, new: 1, changed: 1, removed: 0, unchanged: 1 });
+  assert.deepEqual(second.stats, { total: 3, new: 1, changed: 1, removed: 0, unchanged: 1, kept: 0 });
 });
 
 test('i18n key keeps the same id when its text changes', () => {
@@ -109,4 +110,53 @@ test('a verdict counts as feedback, so the revised flag clears on the next scan'
   assert.equal(second.copy.items[0].status, 'changed');
   const third = mergeScan({ prevCopy: second.copy, prevFeedback: { items: { [id]: { ...second.feedback.items[id], verdict: 'accepted' } } }, scans: [{ items: [item('B', 1)] }], now: NOW });
   assert.equal(third.copy.items[0].status, undefined);
+});
+
+test('findInSource finds strings through escapes and placeholders, and skips short ones', () => {
+  const src = "const a = 1;\nAlert.alert('Couldn\\'t save', `Hi ${name}, try again`);\n<p>Tom &amp; Jerry&rsquo;s plan</p>\n";
+  assert.equal(findInSource(src, "Couldn't save"), 2);
+  assert.equal(findInSource(src, 'Hi {name}, try again'), 2);
+  assert.equal(findInSource(src, 'Tom & Jerry’s plan'), 3);
+  assert.equal(findInSource(src, 'Gone for good'), null);
+  assert.equal(findInSource(src, 'Hi'), null);
+  assert.equal(findInSource(null, "Couldn't save"), null);
+});
+
+test('rescan keeps strings the extractor skipped while their text is still in the file', () => {
+  const first = mergeScan({ scans: [{ items: [item('Save changes', 3), item('Network is down', 9, { kind: 'error' })] }], now: NOW });
+  const src = 'x\nx\n<Button>Save changes</Button>\nx\nx\nx\nx\nx\nx\nx\nthrow msg("Network is down")\n';
+  const second = mergeScan({
+    prevCopy: first.copy,
+    prevFeedback: { items: {} },
+    scans: [{ files: ['src/A.tsx'], items: [item('Save changes', 3)] }],
+    now: '2026-10-18T00:00:00.000Z',
+    sourceOf: () => src,
+  });
+  const kept = second.copy.items.find((i) => i.text === 'Network is down');
+  assert.ok(kept, 'kept');
+  assert.equal(kept.line, 11);
+  assert.equal(second.stats.kept, 1);
+  assert.deepEqual(second.keptByFile, { 'src/A.tsx': 1 });
+
+  // Without sourceOf (or once the text is really gone) it's dropped as before.
+  const third = mergeScan({ prevCopy: first.copy, prevFeedback: { items: {} }, scans: [{ files: ['src/A.tsx'], items: [item('Save changes', 3)] }], now: NOW, sourceOf: () => 'Save changes' });
+  assert.equal(third.copy.items.length, 1);
+});
+
+test('new and changed strings get updatedAt; unchanged ones keep theirs', () => {
+  const first = mergeScan({ scans: [{ items: [item('Submit', 10)] }], now: NOW });
+  const later = '2026-10-19T00:00:00.000Z';
+  const second = mergeScan({ prevCopy: first.copy, prevFeedback: { items: {} }, scans: [{ items: [item('Pay now', 10), item('Back', 30)] }], now: later });
+  for (const it of second.copy.items) assert.equal(it.updatedAt, later);
+  const third = mergeScan({ prevCopy: second.copy, prevFeedback: { items: {} }, scans: [{ items: [item('Pay now', 10), item('Back', 30)] }], now: '2026-10-20T00:00:00.000Z' });
+  for (const it of third.copy.items) assert.equal(it.updatedAt, later);
+});
+
+test('locateSnippet builds a function for one screen, and refuses an empty one', () => {
+  const { copy } = mergeScan({ scans: [{ items: [item('Save', 3), item('Cancel', 4, { screen: 'Settings' })] }], now: NOW });
+  const snippet = locateSnippet(copy, 'Home');
+  assert.match(snippet, /^\(\) => \(function locate/);
+  assert.match(snippet, /"Save"/);
+  assert.doesNotMatch(snippet, /"Cancel"/);
+  assert.throws(() => locateSnippet(copy, 'Nowhere'), /No strings/);
 });

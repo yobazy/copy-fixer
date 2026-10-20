@@ -6,7 +6,7 @@ import {
 const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 
-const state = { copy: null, feedback: { version: 1, items: {} }, voice: '', screenshots: {}, root: '' };
+const state = { copy: null, feedback: { version: 1, items: {} }, voice: '', screenshots: {}, screenshotTimes: {}, root: '' };
 const prefs = loadPrefs();
 const ui = {
   filter: 'all',
@@ -660,6 +660,13 @@ function renderKinds() {
 
 // ---------- screenshot panel ----------
 
+/** Strings on a screen whose text changed after its screenshot was taken. */
+function changedSinceShot(slug) {
+  const taken = state.screenshotTimes[slug];
+  if (!taken) return 0;
+  return items().filter((it) => slugify(it.screen) === slug && it.status !== 'removed' && it.updatedAt && it.updatedAt > taken).length;
+}
+
 function shotMarkup(slug, current, { interactive }) {
   const src = state.screenshots[slug];
   const boxes = items()
@@ -710,8 +717,10 @@ function renderPanel() {
   const status = it.box
     ? `<span class="marked">Highlighted on the screenshot${it.box.source === 'manual' ? ' (marked by you)' : ''}</span>`
     : `<span class="unmarked">Not marked on this screenshot</span>`;
-  panel.dataset.key = `${slug}|${src}|${it.id}|${ui.drawing}`;
+  const stale = changedSinceShot(slug);
+  panel.dataset.key = `${slug}|${src}|${it.id}|${ui.drawing}|${stale}`;
   panel.innerHTML = `${head}
+    ${stale ? `<p class="shot-stale">This screenshot is older than ${plural(stale, 'changed string')} on this screen, so it may show old text. Replace it, or ask Claude to retake it.</p>` : ''}
     <div class="shot-wrap" id="shot-wrap">${shotMarkup(slug, it, { interactive: true })}</div>
     <div class="panel-foot">
       <p class="panel-status">${ui.drawing ? '<span class="marked">Drag a box around the string. <kbd>Esc</kbd> to cancel.</span>' : status}</p>
@@ -1016,6 +1025,7 @@ async function uploadShot(slug, file) {
   if (!res.ok) return toast('Upload failed');
   const { path, cleared } = await res.json();
   state.screenshots[slug] = `${path}?v=${Date.now()}`;
+  state.screenshotTimes[slug] = new Date().toISOString();
   for (const it of items()) if (slugify(it.screen) === slug) delete it.box;
   render();
   toast(cleared ? `Screenshot replaced. ${plural(cleared, 'marked location')} cleared.` : 'Screenshot added');

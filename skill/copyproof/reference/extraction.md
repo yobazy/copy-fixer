@@ -45,7 +45,7 @@ When unsure whether a string reaches the user, trace one hop (where is this erro
 
 ## Writing each item
 
-- `text`: the string **exactly as the user sees it**. Keep the original characters, punctuation and casing. If JSX splits a sentence across inline elements (`Read our <a>terms</a>.`), join it into one item: `Read our terms.` Replace interpolation with readable placeholders that match the source syntax (`{name}`, `{{count}}`, `%@`, `${total}`). For plural variants, add one item per variant, and put the variant (one/other) in the `context`.
+- `text`: the string **exactly as the user sees it**. Keep the original characters, punctuation and casing. If JSX splits a sentence across inline elements (`Read our <a>terms</a>.`), join it into one item: `Read our terms.` Replace interpolation with readable placeholders that match the source syntax (`{name}`, `{{count}}`, `%@`, `${total}`). For plural and conditional variants (`1 person` / `{n} people`, `is in` / `are in`), add one item per variant and put the variant in the `context`. Never join variants into one item with ` / `: the reviewer rates and rewrites each one on its own, and a joined string can't be found on the screen.
 - `file`: path relative to the project root, using `/`.
 - `line`: the 1-based line where the string starts. **It must be correct.** Check it against the file contents, not your memory.
 - `kind`: one of `heading`, `body`, `button`, `link`, `label`, `placeholder`, `tooltip`, `error`, `success`, `empty-state`, `toast`, `dialog`, `notification`, `email`, `onboarding`, `nav`, `title-meta`, `accessibility`, `permission`, `legal`, `other`.
@@ -77,5 +77,6 @@ Write JSON to the path you were given (normally `.copyproof/scan/<name>.json`):
 ```
 
 - `files` lists **every file you read**, including files with no copy. The merge step uses it to know what was rescanned.
+- Listing a file means you extracted **all** of its copy: every kind (labels, buttons, errors, status text, accessibility labels), not just the part you were looking for. The merge treats anything you didn't list from that file as gone. It keeps a string whose text is still in the file, but its line number may be stale and the reviewer loses your `context`.
 - `screens` is optional. Add it for screens you can describe, and include `route` (web path or deep link) when you know it, because the screenshot step uses it.
 - Write valid JSON. Escape quotes and newlines inside strings.

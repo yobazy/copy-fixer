@@ -407,6 +407,7 @@ del + ins { margin-left: 3px; }
 .panel-status .marked { color: color-mix(in srgb, var(--highlight) 75%, var(--text)); font-weight: 550; }
 .panel-status .unmarked { color: var(--muted); }
 .panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.shot-stale { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; line-height: 1.4; color: var(--text); background: color-mix(in srgb, var(--highlight) 18%, transparent); }
 .panel-note { margin: 0; color: var(--muted); font-size: 12.5px; }
 
 .shot-empty {

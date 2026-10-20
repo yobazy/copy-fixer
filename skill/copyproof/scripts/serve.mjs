@@ -3,10 +3,11 @@
 //
 //   node serve.mjs [project] [--port 4477] [--no-open]
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { slugify } from '../lib/core.js';
+import { locateSnippet } from '../lib/locate.js';
 import { DATA_DIR, SKILL_DIR, findScreenshots, parseArgs, paths, readJson, readText, writeAtomic, writeJson } from './common.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -57,8 +58,8 @@ function readBody(req, limit = 25 * 1024 * 1024) {
   });
 }
 
-function send(res, status, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
+function send(res, status, body, type = 'application/json; charset=utf-8', headers = {}) {
+  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...headers });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
 
@@ -110,6 +111,18 @@ async function handle(req, res) {
     return send(res, 200, readFileSync(STATIC[route]), MIME[extname(STATIC[route])] || 'text/plain');
   }
 
+  // The locate function, for the app's own page to fetch and run during the screenshot step
+  // (so it doesn't have to be pasted into the browser tool). Read-only, so any origin may ask.
+  if (req.method === 'GET' && route === '/api/locate') {
+    const cors = { 'access-control-allow-origin': '*' };
+    try {
+      const snippet = locateSnippet(readJson(p.copy), url.searchParams.get('screen') || '');
+      return send(res, 200, snippet, 'text/javascript; charset=utf-8', cors);
+    } catch (err) {
+      return send(res, 404, { error: err.message }, undefined, cors);
+    }
+  }
+
   if (req.method === 'GET' && route === '/api/state') {
     return send(res, 200, {
       root: p.root,
@@ -118,6 +131,9 @@ async function handle(req, res) {
       feedback: readJson(p.feedback, { version: 1, items: {} }),
       voice: readText(p.voice),
       screenshots: findScreenshots(p),
+      screenshotTimes: Object.fromEntries(
+        Object.entries(findScreenshots(p)).map(([slug, rel]) => [slug, statSync(join(p.root, rel)).mtime.toISOString()])
+      ),
     });
   }
 
