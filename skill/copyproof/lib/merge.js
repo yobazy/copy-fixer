@@ -8,7 +8,7 @@ export function itemId(item) {
   return createHash('sha1').update(basis).digest('hex').slice(0, 10);
 }
 
-const FIELDS = ['text', 'file', 'line', 'kind', 'screen', 'context', 'key', 'usedIn'];
+const FIELDS = ['text', 'file', 'line', 'kind', 'screen', 'context', 'when', 'trigger', 'key', 'usedIn'];
 
 function clean(raw) {
   const item = {};
@@ -131,6 +131,9 @@ export function mergeScan({ prevCopy, prevFeedback, scans, full = false, now = n
     const out = { ...it, firstSeen: (prev && prev.firstSeen) || now };
     // Positions on the screenshot come from the locate step or the UI, not from extraction.
     if (prev && prev.box && !out.box) out.box = prev.box;
+    // "When it appears" notes are often added in a later pass (set-when); a rescan that didn't write them keeps them.
+    if (prev && !out.when && prev.when) out.when = prev.when;
+    if (prev && !out.trigger && prev.trigger) out.trigger = prev.trigger;
     if (prev) {
       const textChanged = normalizeText(prev.text) !== normalizeText(it.text);
       if (textChanged) {

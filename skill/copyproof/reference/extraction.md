@@ -51,6 +51,8 @@ When unsure whether a string reaches the user, trace one hop (where is this erro
 - `kind`: one of `heading`, `body`, `button`, `link`, `label`, `placeholder`, `tooltip`, `error`, `success`, `empty-state`, `toast`, `dialog`, `notification`, `email`, `onboarding`, `nav`, `title-meta`, `accessibility`, `permission`, `legal`, `other`.
 - `screen`: the screen, page or surface the user sees it on, named the way a user would say it: `Checkout`, `Settings › Notifications`, `Sign in`, `Emails`, `Push notifications`. Copy in shared components goes under `Shared components`, or under the specific screen if it's only used once. Use the same spelling for the same screen everywhere, because items are grouped by this name.
 - `context`: one short sentence on when or why the user sees it, if that isn't obvious. Examples: "Shown when the card is declined", "Confirm button in the delete-account dialog", "Subject line of the weekly digest email". Leave it empty for self-explanatory items like a page heading.
+- `when`: **for anything not visible when the screen first opens** (errors, toasts, confirmations, empty and loading states, dialogs, menus, notifications, accessibility labels), one plain sentence for the reviewer saying *where on the screen it shows up and what makes it show*, in the user's words, not the code's. Read the surrounding code to get this right (what sets the state, where it renders). Good: 'Under "Got an invite link? Paste it", after you tap it with nothing copied (or something that isn't an invite link).' Bad: "Clipboard has no invite link." Quote the visible thing the user taps or reads, exactly as it appears. Leave it empty for text that's on screen from the start, like a heading or a field label.
+- `trigger`: when the string is caused by, or appears right next to, another visible piece of copy on the same screen (the button that shows an error, the field a hint belongs to), that copy's exact text: `Got an invite link? Paste it`. The review page highlights it on the screenshot when the string itself isn't there. Leave it empty otherwise.
 - `key`: the i18n key, if the string comes from a translation file or a `t('…')` call.
 
 ## Output
@@ -70,7 +72,9 @@ Write JSON to the path you were given (normally `.copyproof/scan/<name>.json`):
       "line": 88,
       "kind": "error",
       "screen": "Checkout",
-      "context": "Shown when the payment provider rejects the card"
+      "context": "Shown when the payment provider rejects the card",
+      "when": "Red line under the card field after you tap Pay and the card is declined.",
+      "trigger": "Pay now"
     }
   ]
 }

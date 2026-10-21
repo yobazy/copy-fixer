@@ -349,7 +349,7 @@ function cardInner(card) {
     <div class="card-meta">${meta}</div>
     ${placesBlock(card)}
     ${textBlock(card, fb)}
-    ${it.context ? `<p class="context">${esc(it.context)}</p>` : ''}
+    ${it.when ? `<p class="context"><span class="when-label">Appears</span> ${esc(it.when)}</p>` : it.context ? `<p class="context">${esc(it.context)}</p>` : ''}
     ${revisionBlock(card, fb)}
     <div class="rating" role="radiogroup" aria-label="Rating">${rating}</div>
     ${nudge}
@@ -685,16 +685,34 @@ function changedSinceShot(slug) {
   return items().filter((it) => slugify(it.screen) === slug && it.status !== 'removed' && it.updatedAt && it.updatedAt > taken).length;
 }
 
+/**
+ * For a string that isn't on the screenshot: the marked string on the same screen that makes it
+ * appear (its `trigger`, e.g. the button that shows an error), so the panel can point there instead.
+ */
+function triggerOf(it) {
+  if (!it || it.box || !it.trigger) return null;
+  const want = normalizeText(it.trigger).toLowerCase();
+  const slug = slugify(it.screen);
+  const onScreen = items().filter((x) => x.box && x.status !== 'removed' && slugify(x.screen) === slug);
+  return (
+    onScreen.find((x) => normalizeText(x.text).toLowerCase() === want) ||
+    onScreen.find((x) => normalizeText(x.text).toLowerCase().startsWith(want)) ||
+    null
+  );
+}
+
 function shotMarkup(slug, current, { interactive }) {
   const src = state.screenshots[slug];
+  const trigger = triggerOf(current);
   const boxes = items()
     .filter((it) => it.box && it.status !== 'removed' && slugify(it.screen) === slug)
     .map((it) => {
       const b = it.box;
-      const isCur = current && it.id === current.id;
+      const isCur = current && (it.id === current.id || (trigger && it.id === trigger.id));
       const card = cardOfItem.get(it.id);
       const tag = interactive ? 'button' : 'div';
-      return `<${tag} class="box ${isCur ? 'current' : ''}" ${interactive ? `data-action="box" data-item="${it.id}"` : ''} title="${esc(card ? card.lead.text : it.text)}" style="left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%"></${tag}>`;
+      const isTrigger = trigger && it.id === trigger.id;
+      return `<${tag} class="box ${isCur ? 'current' : ''} ${isTrigger ? 'trigger' : ''}" ${interactive ? `data-action="box" data-item="${it.id}"` : ''} title="${esc(card ? card.lead.text : it.text)}" style="left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%"></${tag}>`;
     })
     .join('');
   return `<div class="shot-inner ${ui.drawing && interactive ? 'drawing' : ''}"><img src="/${esc(src)}" alt="Screenshot of ${esc(screenInfo(slug).name)}" draggable="false">${boxes}</div>`;
@@ -731,9 +749,14 @@ function renderPanel() {
       <p class="panel-note">Or ask Claude to <em>capture screenshots</em>. For web apps it also marks where each string is.</p>`;
     return;
   }
+  const trigger = triggerOf(it);
   const status = it.box
     ? `<span class="marked">Highlighted on the screenshot${it.box.source === 'manual' ? ' (marked by you)' : ''}</span>`
-    : `<span class="unmarked">Not marked on this screenshot</span>`;
+    : trigger
+      ? `<span class="marked trigger">Not on this screenshot. It appears from the dashed box${it.when ? `: ${esc(it.when)}` : '.'}</span>`
+      : it.when
+        ? `<span class="unmarked">Not on this screenshot. <strong>Appears:</strong> ${esc(it.when)}</span>`
+        : `<span class="unmarked">Not marked on this screenshot</span>`;
   const stale = changedSinceShot(slug);
   panel.dataset.key = `${slug}|${src}|${it.id}|${ui.drawing}|${stale}`;
   panel.innerHTML = `${head}
@@ -751,7 +774,7 @@ function renderPanel() {
       </div>
     </div>`;
   const img = $('#shot-wrap img');
-  const scroll = () => scrollToBox(it);
+  const scroll = () => scrollToBox(it.box ? it : trigger || it);
   if (img.complete) scroll();
   else img.addEventListener('load', scroll, { once: true });
 }

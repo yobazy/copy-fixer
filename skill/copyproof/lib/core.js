@@ -211,7 +211,7 @@ export function buildPrompt({ copy, feedback, voice, screenshots = {} }, options
         out.push(`   - Same text also at: ${[...new Set(others)].join(', ')}. Apply the same change everywhere.`);
       }
       out.push(`   - Current: ${quote(it.text)}`);
-      if (it.context) out.push(`   - Where it appears: ${it.context}`);
+      if (it.when || it.context) out.push(`   - Where it appears: ${it.when || it.context}`);
       if (fb.verdict === 'rejected' && it.previousText) {
         out.push(`   - Your last revision changed ${quote(it.previousText)} to the current text. I rejected it, so try again.`);
       }

@@ -160,3 +160,19 @@ test('locateSnippet builds a function for one screen, and refuses an empty one',
   assert.doesNotMatch(snippet, /"Cancel"/);
   assert.throws(() => locateSnippet(copy, 'Nowhere'), /No strings/);
 });
+
+test('when-it-appears notes come through extraction and survive a rescan that left them out', () => {
+  const first = mergeScan({
+    scans: [{ files: ['src/A.tsx'], items: [item('Card declined', 9, { kind: 'error', when: 'Under Pay after a decline.', trigger: 'Pay' })] }],
+    now: NOW,
+  });
+  assert.equal(first.copy.items[0].when, 'Under Pay after a decline.');
+  assert.equal(first.copy.items[0].trigger, 'Pay');
+  const again = mergeScan({
+    prevCopy: first.copy,
+    scans: [{ files: ['src/A.tsx'], items: [item('Card declined', 9, { kind: 'error' })] }],
+    now: NOW,
+  });
+  assert.equal(again.copy.items[0].when, 'Under Pay after a decline.');
+  assert.equal(again.copy.items[0].trigger, 'Pay');
+});

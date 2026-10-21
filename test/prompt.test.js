@@ -103,3 +103,10 @@ test('verdicts: accepted counts as reviewed, rejected is flagged with its histor
   assert.match(out, /Your last revision changed "Submit" to the current text\. I rejected it/);
   assert.match(out, /Notes: Too pushy/);
 });
+
+test('the prompt says where a string appears, preferring the when note', async () => {
+  const { buildPrompt } = await import('../skill/copyproof/lib/core.js');
+  const copy = { project: 'p', items: [{ id: 'a1', text: 'Card declined', file: 'src/A.tsx', line: 9, kind: 'error', screen: 'Checkout', context: 'old', when: 'Under Pay after a decline.' }] };
+  const out = buildPrompt({ copy, feedback: { items: { a1: { rating: 2 } } } });
+  assert.match(out, /Where it appears: Under Pay after a decline\./);
+});

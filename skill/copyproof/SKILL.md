@@ -112,6 +112,22 @@ If you can't drive the app at all, tell the user they can drop or paste a screen
 
 Replacing a screen's screenshot clears its positions, so locate and screenshot together. After a rescan that changed copy on a screen, recapture that screen so the screenshot shows the new text. Merge lists those screens, and the review page warns on a screenshot that's older than the copy on it.
 
+### When-it-appears notes
+
+A string that isn't on its screenshot (an error, a toast, a confirmation) is hard to review without knowing where it shows up. Extraction writes a `when` note and an optional `trigger` for these (see `reference/extraction.md`). For a project scanned before that, or to fill gaps, run a notes pass:
+
+```bash
+node SKILL_DIR/scripts/set-when.mjs <project> --todo --unmarked --out .copyproof/when-todo.json
+```
+
+This lists strings with no note that aren't marked on a screenshot, grouped by file. Split the files into batches and start parallel subagents, one per batch. Each one reads `reference/extraction.md` (the `when` and `trigger` sections), reads each listed file and whatever renders the string, and writes `{ "<id>": { "when": "...", "trigger": "..." } }` to `.copyproof/when-<batch>.json`. Then save them:
+
+```bash
+node SKILL_DIR/scripts/set-when.mjs <project> .copyproof/when-*.json
+```
+
+Delete the `when-*.json` files afterwards. Notes survive rescans. In the review page a string shows **Appears …** under its text, and when it isn't on the screenshot the panel says where it shows up and draws a dashed box around its trigger.
+
 ## 5. Open the review
 
 ```bash
