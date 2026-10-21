@@ -119,10 +119,10 @@ test('an earlier expert note rides along in the prompt for strings the user flag
   assert.match(out, /Try another card/);
 });
 
-test('a flag alone puts a well-rated string in the prompt', () => {
+test('marking a string for later keeps it out of the prompt', () => {
   const copy = { project: 'p', items: [{ id: 'a1', text: 'New hangout', file: 'src/A.tsx', line: 3, kind: 'button', screen: 'Home' }] };
-  assert.equal(isFlagged({ rating: 4, flag: true }), true);
-  const out = buildPrompt({ copy, feedback: { items: { a1: { rating: 4, flag: true } } } });
-  assert.match(out, /I flagged this one to fix\./);
-  assert.match(out, /Rating: 4\/5/);
+  assert.equal(isFlagged({ later: true }), false);
+  assert.equal(isReviewed({ later: true }), false);
+  const { flagged } = selectForPrompt(copy, { items: { a1: { rating: 4, later: true } } });
+  assert.equal(flagged.length, 0);
 });

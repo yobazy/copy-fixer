@@ -146,7 +146,7 @@ node SKILL_DIR/scripts/serve.mjs <project>
 
 Run it in the background. It picks a free port starting at 4477, opens the browser, and prints the URL. Give the user the URL and a short summary: how many strings, how many screens, anything you weren't sure about. Then stop and let them review. Don't wait on the server.
 
-In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems, add comments (`C`), and flag a string to fix whatever its rating (`G`). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
+In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems, add comments (`C`), and mark a string to come back to when you're not ready to decide (`G`, shown under **For later**; it doesn't go into the prompt). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
 
 ## 6. Apply feedback
 

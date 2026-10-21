@@ -90,7 +90,7 @@ export function findInSource(src, text) {
 }
 
 function hasFeedback(fb) {
-  return Boolean(fb && (fb.rating != null || fb.verdict || fb.flag || (fb.tags || []).length || (fb.suggestion || '').trim() || (fb.comment || '').trim()));
+  return Boolean(fb && (fb.rating != null || fb.verdict || fb.later || (fb.tags || []).length || (fb.suggestion || '').trim() || (fb.comment || '').trim()));
 }
 
 function archive(fb, previousText, now) {

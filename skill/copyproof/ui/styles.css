@@ -402,8 +402,8 @@ kbd {
 }
 .chip.status-new { background: color-mix(in srgb, var(--new) 16%, transparent); color: var(--new); }
 .chip.status-changed { background: color-mix(in srgb, var(--changed) 16%, transparent); color: var(--changed); }
-.chip.flag-chip { background: color-mix(in srgb, var(--r1) 14%, transparent); color: var(--r1); }
-.card-actions button[aria-pressed="true"] { color: var(--r1); }
+.chip.later-chip { background: color-mix(in srgb, var(--signal) 18%, transparent); color: var(--text); }
+.card-actions button[aria-pressed="true"] { color: var(--text); }
 .chip.status-removed { color: var(--removed); }
 .places-chip { cursor: pointer; background: var(--signal); color: var(--on-signal); }
 .places-chip[aria-expanded="true"] { outline: 2px solid var(--text); outline-offset: 1px; }

@@ -48,7 +48,7 @@ export function findPlaceholders(text) {
 }
 
 function hasNotes(fb) {
-  return Boolean(fb && (fb.flag || (fb.suggestion || '').trim() || (fb.comment || '').trim() || (fb.tags || []).length));
+  return Boolean(fb && ((fb.suggestion || '').trim() || (fb.comment || '').trim() || (fb.tags || []).length));
 }
 
 /** Rated, or a revision the user accepted or sent back. */
@@ -109,7 +109,7 @@ export const DEFAULT_PROMPT_OPTIONS = {
 };
 
 function feedbackKey(fb = {}) {
-  return JSON.stringify([fb.rating ?? null, [...(fb.tags || [])].sort(), (fb.suggestion || '').trim(), (fb.comment || '').trim(), fb.verdict || null, Boolean(fb.flag)]);
+  return JSON.stringify([fb.rating ?? null, [...(fb.tags || [])].sort(), (fb.suggestion || '').trim(), (fb.comment || '').trim(), fb.verdict || null]);
 }
 
 export function selectForPrompt(copy, feedback, options = {}) {
@@ -215,7 +215,6 @@ export function buildPrompt({ copy, feedback, voice, screenshots = {}, expert },
       if (fb.verdict === 'rejected' && it.previousText) {
         out.push(`   - Your last revision changed ${quote(it.previousText)} to the current text. I rejected it, so try again.`);
       }
-      if (fb.flag) out.push('   - I flagged this one to fix.');
       if (fb.rating != null) out.push(`   - Rating: ${fb.rating}/5`);
       if ((fb.tags || []).length) {
         const labels = fb.tags.map((t) => (TAGS.find((x) => x.id === t) || { label: t }).label);
@@ -238,7 +237,7 @@ export function buildPrompt({ copy, feedback, voice, screenshots = {}, expert },
   out.push('', '## How to revise', '');
   const rules = [
     'Where I wrote a suggested rewrite, use it. Only adjust it to fix grammar, keep placeholders working, or fit the space.',
-    'Where I left no suggestion, write a revision that addresses my rating, problems and notes. Where I only flagged an item, judge what\'s wrong against the voice notes and the copy I love.',
+    'Where I left no suggestion, write a revision that addresses my rating, problems and notes.',
     'Keep every placeholder, variable and format specifier exactly as written.',
     'Keep buttons, labels and navigation items about as short as they are now so layouts don\'t break.',
     'If the same or similar text appears elsewhere, keep wording consistent across all of it.',

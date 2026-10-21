@@ -35,7 +35,7 @@ let cards = [];
 const cardById = new Map();
 const cardOfItem = new Map();
 const undoStack = [];
-const FB_FIELDS = ['rating', 'tags', 'suggestion', 'comment', 'verdict', 'flag'];
+const FB_FIELDS = ['rating', 'tags', 'suggestion', 'comment', 'verdict', 'later'];
 
 function loadPrefs() {
   try {
@@ -155,6 +155,7 @@ function matchesFilter(card, filter = ui.filter) {
   if (it.status === 'removed') return false;
   if (filter === 'unrated') return !reviewed(card);
   if (filter === 'flagged') return isFlagged(fbOf(it.id), 3);
+  if (filter === 'later') return Boolean(cardFb(card).later);
   if (filter === 'fresh') return it.status === 'new' || it.status === 'changed';
   if (filter === 'claude') return expertFlagged(card);
   return true;
@@ -347,7 +348,7 @@ function cardInner(card) {
     `<span class="chip">${esc(it.kind || 'other')}</span>`,
     status ? `<span class="chip status-${it.status}">${status}</span>` : '',
     it.status === 'changed' ? `<span class="chip status-changed">Revised</span>` : '',
-    fb.flag ? `<span class="chip flag-chip">Flagged</span>` : '',
+    fb.later ? `<span class="chip later-chip">For later</span>` : '',
     `<button class="loc" data-action="open" title="${esc(it.file)}${it.line ? ':' + it.line : ''} · open in editor (O)">${esc(locLabel(it))}</button>`,
     card.items.length > 1
       ? `<button class="chip places-chip" data-action="places" aria-expanded="${ui.openPlaces.has(card.id)}" title="${esc(screens.join(', '))}">${card.items.length} places</button>`
@@ -377,7 +378,7 @@ function cardInner(card) {
   const actions = [
     ui.editingId === card.id || (fb.suggestion || '').trim() ? '' : `<button data-action="edit">Rewrite <kbd>Enter</kbd></button>`,
     showComment ? '' : `<button data-action="comment">Comment <kbd>C</kbd></button>`,
-    `<button data-action="flag" aria-pressed="${Boolean(fb.flag)}">${fb.flag ? 'Unflag' : 'Flag'} <kbd>G</kbd></button>`,
+    `<button data-action="later" aria-pressed="${Boolean(fb.later)}">${fb.later ? 'Done with later' : 'Come back later'} <kbd>G</kbd></button>`,
   ].join('');
 
   const stamp = fb.verdict === 'accepted' ? ['ok', 'Accepted'] : fb.verdict === 'rejected' ? ['r1', 'Sent back'] : fb.rating != null ? [`r${fb.rating}`, RATING_LABELS[fb.rating]] : null;
@@ -478,8 +479,9 @@ function render() {
   if (!visible.length) {
     const msg = {
       unrated: ['Everything here is reviewed', 'Open the summary, or generate the prompt.'],
-      flagged: ['Nothing flagged yet', 'Strings you flag (G), rate 3 or lower, or give tags, rewrites or comments show up here.'],
+      flagged: ['Nothing flagged yet', 'Strings rated 3 or lower, or with tags, rewrites or comments, show up here.'],
       fresh: ['No new or revised copy', 'New and changed strings show up here after a rescan.'],
+      later: ['Nothing saved for later', 'Press G on a string you want to come back to.'],
       removed: ['Nothing removed', ''],
     }[ui.filter] || ['No matches', 'Try a different search or kind.'];
     const [title, body] = ui.query ? ['No matches', 'Try a different search.'] : msg;
@@ -651,6 +653,7 @@ function renderCounts() {
     all: all.length,
     unrated: all.length - done,
     flagged,
+    later: all.filter((c) => cardFb(c).later).length,
     fresh: all.filter((c) => c.lead.status === 'new' || c.lead.status === 'changed').length,
     claude: all.filter(expertFlagged).length,
     removed: cards.length - all.length,
@@ -658,7 +661,7 @@ function renderCounts() {
   for (const btn of $$('#filters button')) {
     const f = btn.dataset.filter;
     btn.innerHTML = `${btn.dataset.label} <span class="count">${counts[f]}</span>`;
-    if (f === 'removed' || f === 'fresh' || f === 'claude') btn.hidden = counts[f] === 0 && ui.filter !== f;
+    if (f === 'removed' || f === 'fresh' || f === 'claude' || f === 'later') btn.hidden = counts[f] === 0 && ui.filter !== f;
   }
   // Finished everything for the first time this session: show where things stand.
   if (renderCounts.lastLeft > 0 && counts.unrated === 0 && all.length && !ui.summaryShown) {
@@ -980,9 +983,9 @@ function rate(card, v) {
   }
 }
 
-function toggleFlag(card) {
+function toggleLater(card) {
   mutate(card, (cur) => {
-    cur.flag = cur.flag ? undefined : true;
+    cur.later = cur.later ? undefined : true;
   });
   afterChange(card);
 }
@@ -1342,7 +1345,7 @@ function bind() {
       afterChange(card);
     }
     else if (a === 'tag') toggleTag(card, act.dataset.tag);
-    else if (a === 'flag') toggleFlag(card);
+    else if (a === 'later') toggleLater(card);
     else if (a === 'edit') startEdit(card);
     else if (a === 'discard') {
       mutate(card, (cur) => (cur.suggestion = undefined));
@@ -1570,7 +1573,7 @@ function onKey(e) {
     ui.openComments.add(card.id);
     return refreshCard(card.id, 'textarea[data-field="comment"]');
   }
-  if (k === 'g') return handled(), toggleFlag(card);
+  if (k === 'g') return handled(), toggleLater(card);
   if (k === 'm') return handled(), startDrawing();
   if (k === 'y') return handled(), setVerdict(card, cardFb(card).verdict === 'accepted' ? '' : 'accepted');
   if (k === 'r') return handled(), setVerdict(card, cardFb(card).verdict === 'rejected' ? '' : 'rejected');
