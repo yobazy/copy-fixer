@@ -27,6 +27,7 @@ const MIME = {
   '.webp': 'image/webp',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
 };
 const IMAGE_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
 const STATIC = {
@@ -34,6 +35,9 @@ const STATIC = {
   '/app.js': join(SKILL_DIR, 'ui', 'app.js'),
   '/styles.css': join(SKILL_DIR, 'ui', 'styles.css'),
   '/lib/core.js': join(SKILL_DIR, 'lib', 'core.js'),
+  ...Object.fromEntries(
+    ['overpass-latin-wght-normal', 'overpass-latin-wght-italic', 'overpass-mono-latin-wght-normal'].map((n) => [`/fonts/${n}.woff2`, join(SKILL_DIR, 'ui', 'fonts', `${n}.woff2`)])
+  ),
 };
 
 /** Resolve `rel` inside `base`, refusing anything that escapes it. */

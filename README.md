@@ -39,7 +39,7 @@ In any project, in Claude Code:
 | `C` | Comment |
 | `N` | Next string to review |
 | `[` / `]` | Previous / next screen. The page shows one screen at a time; `J` past the last string moves on, and a search looks across every screen |
-| `F` | Focus mode: one big string at a time, beside its screen |
+| `F` | One at a time: one big string, beside its screen |
 | `M` | Mark where the string is on the screenshot (drag a box) |
 | `Y` / `R` | Accept / send back a revised string |
 | `⌘Z` | Undo |
@@ -47,7 +47,9 @@ In any project, in Claude Code:
 | `A` | Toggle auto-advance after rating |
 | `E` | Generate the prompt |
 
-To add a screenshot, drop or paste an image onto the panel, or click it to pick a file. Use **Compact** for long lists. Click the progress line under the project name for a summary: reviewed count, average rating, and screens sorted worst first.
+The page works like a transit map. The rail on the left draws your screens as stops on a line: filled stops are done, and the yellow one is where you are. Each screen shows a strip of marks, one per string, coloured by rating, so you can see what's left. The string you're on lights up as a black panel. Rated strings get a stamp (Weak, Good, Love it…). The bar along the bottom shows the keys and the next stop, and it turns yellow when a screen is done.
+
+To add a screenshot, drop or paste an image onto the panel, or click it to pick a file. **View** has the one-at-a-time layout, auto-advance, compact cards, voice notes and shortcuts. Click the progress line under the project name for a summary: reviewed count, average rating, and screens sorted worst first.
 
 **Voice notes** are saved to `.copyproof/voice.md` and go at the top of every prompt. Put the product's tone rules there once.
 

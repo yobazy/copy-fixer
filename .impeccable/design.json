@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T23:36:37.181Z",
+  "title": "Design System: copyproof",
+  "extensions": {
+    "colorMeta": {
+      "signal": {
+        "role": "primary",
+        "displayName": "Signal Yellow",
+        "tonalRamp": [
+          "oklch(15% 0.18 95)",
+          "oklch(25% 0.18 95)",
+          "oklch(35% 0.18 95)",
+          "oklch(45% 0.18 95)",
+          "oklch(60% 0.18 95)",
+          "oklch(75% 0.18 95)",
+          "oklch(85% 0.18 95)",
+          "oklch(95% 0.18 95)"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Sign Black",
+        "tonalRamp": [
+          "oklch(15% 0.003 90)",
+          "oklch(25% 0.003 90)",
+          "oklch(35% 0.003 90)",
+          "oklch(45% 0.003 90)",
+          "oklch(60% 0.003 90)",
+          "oklch(75% 0.003 90)",
+          "oklch(85% 0.003 90)",
+          "oklch(95% 0.003 90)"
+        ]
+      },
+      "concrete": {
+        "role": "neutral",
+        "displayName": "Warm Concrete",
+        "tonalRamp": [
+          "oklch(15% 0.006 95)",
+          "oklch(25% 0.006 95)",
+          "oklch(35% 0.006 95)",
+          "oklch(45% 0.006 95)",
+          "oklch(60% 0.006 95)",
+          "oklch(75% 0.006 95)",
+          "oklch(85% 0.006 95)",
+          "oklch(95% 0.006 95)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Sign White",
+        "tonalRamp": [
+          "oklch(15% 0.004 95)",
+          "oklch(25% 0.004 95)",
+          "oklch(35% 0.004 95)",
+          "oklch(45% 0.004 95)",
+          "oklch(60% 0.004 95)",
+          "oklch(75% 0.004 95)",
+          "oklch(85% 0.004 95)",
+          "oklch(95% 0.004 95)"
+        ]
+      },
+      "rating-1": {
+        "role": "status",
+        "displayName": "FIX Red",
+        "tonalRamp": [
+          "oklch(15% 0.19 27)",
+          "oklch(25% 0.19 27)",
+          "oklch(35% 0.19 27)",
+          "oklch(45% 0.19 27)",
+          "oklch(60% 0.19 27)",
+          "oklch(75% 0.19 27)",
+          "oklch(85% 0.19 27)",
+          "oklch(95% 0.19 27)"
+        ]
+      },
+      "rating-5": {
+        "role": "status",
+        "displayName": "OK Green",
+        "tonalRamp": [
+          "oklch(15% 0.13 160)",
+          "oklch(25% 0.13 160)",
+          "oklch(35% 0.13 160)",
+          "oklch(45% 0.13 160)",
+          "oklch(60% 0.13 160)",
+          "oklch(75% 0.13 160)",
+          "oklch(85% 0.13 160)",
+          "oklch(95% 0.13 160)"
+        ]
+      },
+      "status-new": {
+        "role": "status",
+        "displayName": "New Blue",
+        "tonalRamp": [
+          "oklch(15% 0.17 265)",
+          "oklch(25% 0.17 265)",
+          "oklch(35% 0.17 265)",
+          "oklch(45% 0.17 265)",
+          "oklch(60% 0.17 265)",
+          "oklch(75% 0.17 265)",
+          "oklch(85% 0.17 265)",
+          "oklch(95% 0.17 265)"
+        ]
+      },
+      "status-changed": {
+        "role": "status",
+        "displayName": "Changed Violet",
+        "tonalRamp": [
+          "oklch(15% 0.17 305)",
+          "oklch(25% 0.17 305)",
+          "oklch(35% 0.17 305)",
+          "oklch(45% 0.17 305)",
+          "oklch(60% 0.17 305)",
+          "oklch(75% 0.17 305)",
+          "oklch(85% 0.17 305)",
+          "oklch(95% 0.17 305)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen name in the stop header."
+      },
+      "sign-focused": {
+        "displayName": "Sign, focused",
+        "purpose": "The string under review."
+      },
+      "sign": {
+        "displayName": "Sign",
+        "purpose": "Every other string."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Project name in the rail; sequence code."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "UI text, tabular numerals."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase field labels, \"You are here\", stamps."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Paths, keys, counts, kbd."
+      }
+    },
+    "darkMode": {
+      "bg": "#2b2a27",
+      "surface": "#34332f",
+      "surface2": "#3d3c37",
+      "text": "#f2f1ec",
+      "muted": "#b6b3ab",
+      "focus": "#ffd200",
+      "rating": [
+        "#f0625a",
+        "#f08a45",
+        "#e0b532",
+        "#86c46c",
+        "#3fbf86"
+      ]
+    },
+    "shadows": [
+      {
+        "name": "menu-pop",
+        "value": "0 12px 32px rgb(0 0 0 / 0.18)",
+        "purpose": "View menu popover only."
+      },
+      {
+        "name": "spotlight",
+        "value": "0 0 0 9999px rgb(0 0 0 / 0.32)",
+        "purpose": "Dims the screenshot around the current string box."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 3px solid var(--focus); outline-offset: 2px",
+        "purpose": "Keyboard focus; yellow on black surfaces."
+      },
+      {
+        "name": "focused-sign",
+        "value": "outline: 4px solid #ffd200",
+        "purpose": "The current sign panel."
+      }
+    ],
+    "motion": [
+      {
+        "name": "progress",
+        "value": "width 0.3s cubic-bezier(0.2, 0.7, 0.2, 1)",
+        "purpose": "Rail progress fill."
+      },
+      {
+        "name": "state",
+        "value": "0.15s–0.18s ease (background, border-color, color)",
+        "purpose": "Buttons and card hover."
+      },
+      {
+        "name": "keypress",
+        "value": "transform 0.08s ease",
+        "purpose": "Keycap press."
+      },
+      {
+        "name": "reduced",
+        "value": "transition: none",
+        "purpose": "prefers-reduced-motion disables all transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1280px"
+      },
+      {
+        "name": "tablet",
+        "value": "1024px"
+      },
+      {
+        "name": "phone",
+        "value": "760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Square default button.",
+      "html": "<button class=\"ds-btn\">Export</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid #cfcdc6;border-radius:0;background:#fff;color:#111;font:650 14px Overpass,system-ui,sans-serif;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn:hover{border-color:#111}.ds-btn:focus-visible{outline:3px solid #111;outline-offset:2px}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink primary, e.g. Generate prompt.",
+      "html": "<button class=\"ds-btn-primary\">Generate prompt</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid #111;border-radius:0;background:#111;color:#e7e6e1;font:650 14px Overpass,system-ui,sans-serif;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#373735}.ds-btn-primary:focus-visible{outline:3px solid #111;outline-offset:2px}"
+    },
+    {
+      "name": "Rating Keycaps",
+      "kind": "custom",
+      "refersTo": "keycap",
+      "description": "1–5 rating keys; selected fills with rating color.",
+      "html": "<div class=\"ds-rating\"><button class=\"ds-rate\">1</button><button class=\"ds-rate\">2</button><button class=\"ds-rate\">3</button><button class=\"ds-rate on\">4</button><button class=\"ds-rate\">5</button></div>",
+      "css": ".ds-rating{display:flex;gap:6px}.ds-rate{width:36px;height:32px;padding-top:3px;border:1px solid #8f8c84;border-bottom-width:3px;border-radius:3px;background:#fff;color:#111;font:800 15px Overpass,system-ui,sans-serif;cursor:pointer;transition:transform .08s ease,background .12s}.ds-rate:hover{border-color:#111}.ds-rate:active{transform:translateY(2px);border-bottom-width:1px}.ds-rate:focus-visible{outline:3px solid #111;outline-offset:2px}.ds-rate.on{background:#3b7d32;border-color:transparent;color:#fff}"
+    },
+    {
+      "name": "Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Square toggle tag.",
+      "html": "<button class=\"ds-tag\">Too long</button> <button class=\"ds-tag on\">Unclear</button>",
+      "css": ".ds-tag{height:28px;padding:1px 10px 0;border:1px solid #8f8c84;border-radius:0;background:none;color:#4b4944;font:13px Overpass,system-ui,sans-serif;cursor:pointer}.ds-tag:hover{border-color:#111;color:#111}.ds-tag:focus-visible{outline:3px solid #111;outline-offset:2px}.ds-tag.on{background:#111;border-color:#111;color:#fff;font-weight:650}"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Square search field with ink focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search copy\">",
+      "css": ".ds-input{height:36px;padding:0 10px;border:1px solid #cfcdc6;border-radius:0;background:#fff;color:#111;font:15px Overpass,system-ui,sans-serif}.ds-input:focus{outline:none;border-color:#111;box-shadow:inset 0 0 0 1px #111}"
+    },
+    {
+      "name": "Sign Card",
+      "kind": "card",
+      "refersTo": "sign-card",
+      "description": "A string as a sign; stamped when rated, black with yellow ring when focused.",
+      "html": "<div class=\"ds-sign\"><span class=\"ds-stamp\">OK</span><p>Save changes</p></div><div class=\"ds-sign focused\"><p>Something went wrong. Try again.</p></div>",
+      "css": ".ds-sign{margin-bottom:12px;padding:16px 20px 14px;background:#fff;color:#111;border-top:2px solid #111;font:600 19px/1.4 Overpass,system-ui,sans-serif;transition:background .18s}.ds-sign p{margin:0}.ds-sign:hover:not(.focused){background:#fffbe6}.ds-sign.focused{background:#111;color:#f6f5f0;outline:4px solid #ffd200;padding:22px 24px 18px;font-size:24px;font-weight:700}.ds-stamp{float:right;padding:4px 10px 2px;border:3px solid #0a7a4b;color:#0a7a4b;font:850 13px/1.25 Overpass,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;transform:rotate(-3deg)}"
+    },
+    {
+      "name": "Rail Line",
+      "kind": "nav",
+      "refersTo": "stop-active",
+      "description": "Screens as stops on a yellow line; active stop is a yellow band.",
+      "html": "<nav class=\"ds-line\"><button class=\"ds-stop done\"><i></i>Welcome</button><button class=\"ds-stop active\"><i></i>Onboarding</button><button class=\"ds-stop\"><i></i>Settings</button></nav>",
+      "css": ".ds-line{background:#111;padding:14px 0;width:252px}.ds-stop{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:38px;padding:6px 18px 6px 22px;border:0;background:none;color:#f4f3ef;font:500 14px Overpass,system-ui,sans-serif;cursor:pointer;text-align:left}.ds-stop::before{content:\"\";position:absolute;left:31px;top:0;bottom:0;width:4px;background:#ffd200}.ds-stop i{position:relative;z-index:1;width:22px;height:22px;border-radius:50%;border:4px solid #ffd200;background:#111;box-sizing:border-box}.ds-stop.done i{background:#ffd200}.ds-stop.done{color:#a9a69e}.ds-stop:hover{background:rgb(244 243 239/.08)}.ds-stop:focus-visible{outline:3px solid #ffd200;outline-offset:2px}.ds-stop.active{min-height:58px;background:#ffd200;color:#111;font-weight:750;font-size:15px}.ds-stop.active::before{background:#111}.ds-stop.active i{border-color:#111;background:#ffd200}"
+    },
+    {
+      "name": "Next-stop Bar",
+      "kind": "custom",
+      "refersTo": "next-stop",
+      "description": "Sticky black bar pointing to the next screen; turns yellow on arrival.",
+      "html": "<div class=\"ds-next\"><span>Next stop</span><button>Settings</button></div>",
+      "css": ".ds-next{display:flex;align-items:center;gap:14px;min-height:56px;padding:10px 20px;background:#111;color:#a9a69e;font:13.5px Overpass,system-ui,sans-serif}.ds-next button{height:38px;padding:2px 14px 0;border:2px solid #ffd200;background:none;color:#ffd200;font:750 15px Overpass,system-ui,sans-serif;cursor:pointer}.ds-next button:hover{background:#ffd200;color:#111}.ds-next button:focus-visible{outline:3px solid #ffd200;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Wayfinding",
+    "overview": "Every screen of the reviewed app is a stop on a line and every string is a sign to approve. The page always answers three questions: where am I, what's left, what's next. A solid black rail carries a vertical signal-yellow line with one node per stop; the work area shows the current stop's sequence code and its strings as sign panels; a black \"Next stop\" bar sits at the bottom of the work column and turns yellow when the screen is done.\n\nThe world is built from road-sign materials: black panels, a single signal yellow, warm concrete-grey ground, square corners, thick rules, and status rendered as rotated stamps. Density is high but staged: only the current sign shows its controls, rated signs collapse to their stamp. Overpass (Highway Gothic lineage) sets everything; Overpass Mono carries codes, keys, and counts. It refuses the generic grey sidebar-list-panel tool with one blue accent.",
+    "keyCharacteristics": [
+      "Black rail with a 4px yellow line and circular stop nodes that fill (conic) with progress.",
+      "Signal yellow reserved for \"you are here\", the current string, and arrival.",
+      "Square corners everywhere except keycaps (3px) and stop nodes (round).",
+      "Status as stamps (3px bordered, uppercase, rotated -3deg), never hidden.",
+      "Focused sign inverts to a black panel with a 4px yellow outline.",
+      "Light and dark via prefers-color-scheme; the rail stays black in both."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Yellow means \"you are here\" or \"arrived\". It never decorates; if a yellow element is not the current position, the current string, or progress toward it, it is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stamp Rule",
+        "body": "Status is shown by the rating colors as stamps, ticks, and filled keycaps. Those colors are not used for anything else.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sign Weight Rule",
+        "body": "Strings under review are always the heaviest, largest text in their panel; chrome never outweighs the copy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Inversion Rule",
+        "body": "To raise something, turn it into a black sign panel; don't lift it with a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep signal yellow (#ffd200) for current position, current string, progress, and arrival only.",
+      "Do use square corners (0px) for every surface and control except keycaps (3px) and stop nodes (round).",
+      "Do show status as stamps, ticks, or filled keycaps in the rating colors.",
+      "Do raise the active element by inverting it to a black panel with a 4px yellow outline.",
+      "Do set codes, keys, paths, and counts in Overpass Mono with tabular numerals.",
+      "Do keep the rail black in both light and dark mode."
+    ],
+    "donts": [
+      "Don't introduce a second accent hue; the rating and diff colors are status, not decoration.",
+      "Don't add soft drop shadows to cards or buttons; the only shadows are the menu popover and the screenshot spotlight.",
+      "Don't round sign panels, buttons, tags, or inputs.",
+      "Don't load fonts from a CDN; Overpass and Overpass Mono ship in ui/fonts."
+    ]
+  }
+}

@@ -5,3 +5,7 @@ test/fixtures/**/.copyproof/feedback.json
 test/fixtures/**/.copyproof/prompt.md
 test/fixtures/**/.copyproof/voice.md
 .playwright-mcp/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/questions/
+.impeccable/questions-*.json

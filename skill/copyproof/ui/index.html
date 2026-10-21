@@ -4,31 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Copyproof</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%231d1c1a%22/%3E%3Ctext x=%2216%22 y=%2230%22 font-family=%22Georgia%22 font-size=%2228%22 font-weight=%22700%22 fill=%22%23f6f5f2%22 text-anchor=%22middle%22%3E%E2%80%9C%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23111%22/%3E%3Crect x=%2213%22 y=%220%22 width=%226%22 height=%2232%22 fill=%22%23FFD200%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%227%22 fill=%22%23111%22 stroke=%22%23FFD200%22 stroke-width=%224%22/%3E%3C/svg%3E">
+  <link rel="preload" href="/fonts/overpass-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">“</span>
-      <div>
-        <h1 id="project-name">Copyproof</h1>
-        <button class="progress-text" id="progress-text" title="See the summary">Loading…</button>
-      </div>
+  <nav class="rail" aria-label="Screens">
+    <div class="rail-head">
+      <span class="wordmark">copyproof</span>
+      <h1 id="project-name">Loading…</h1>
+      <button class="rail-progress" id="progress-text" title="See the summary">Loading…</button>
+      <div class="progress-bar" aria-hidden="true"><span id="progress-fill"></span></div>
     </div>
-    <div class="actions">
-      <span class="save-state" id="save-state" aria-live="polite"></span>
-      <button class="btn ghost" id="undo" title="Undo (⌘Z)" disabled>Undo</button>
-      <button class="btn ghost" id="open-voice">Voice notes</button>
-      <button class="btn ghost icon" id="open-help" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
-      <button class="btn primary" id="open-export">Generate prompt</button>
-    </div>
-    <div class="toolbar">
+    <div class="line" id="sidebar"></div>
+    <label class="rail-foot">
+      <span>Group by</span>
+      <select id="group-by">
+        <option value="screen">Screens</option>
+        <option value="file">Files</option>
+        <option value="kind">Kinds</option>
+      </select>
+    </label>
+  </nav>
+
+  <div class="work">
+    <header class="topbar">
+      <div class="find" id="find">
       <label class="search">
         <span class="visually-hidden">Search copy</span>
-        <input id="search" type="search" placeholder="Search text, file, screen…  ( / )" autocomplete="off">
+        <input id="search" type="search" placeholder="Search all screens" autocomplete="off">
       </label>
-      <div class="segmented" id="filters" role="group" aria-label="Filter">
+      <div class="segmented" id="filters" role="group" aria-label="Show">
         <button data-filter="all" aria-pressed="true">All</button>
         <button data-filter="unrated">To review</button>
         <button data-filter="flagged">Flagged</button>
@@ -39,40 +45,43 @@
         <span class="visually-hidden">Kind</span>
         <select id="kind-filter"><option value="all">All kinds</option></select>
       </label>
-      <label class="select">
-        <span>Group by</span>
-        <select id="group-by">
-          <option value="screen">Screen</option>
-          <option value="file">File</option>
-          <option value="kind">Kind</option>
-        </select>
-      </label>
-      <span class="spacer"></span>
-      <div class="segmented" id="view-mode" role="group" aria-label="View">
-        <button data-mode="list" aria-pressed="true" title="All strings (F)">List</button>
-        <button data-mode="focus" title="One string at a time (F)">Focus</button>
       </div>
-      <label class="toggle" title="Jump to the next string after rating (A)">
-        <input type="checkbox" id="auto-advance"> Auto-advance
-      </label>
-      <label class="toggle" title="Tighter cards">
-        <input type="checkbox" id="compact"> Compact
-      </label>
-    </div>
-    <div class="progress-bar" aria-hidden="true"><span id="progress-fill"></span></div>
-  </header>
+      <div class="actions">
+      <span class="save-state" id="save-state" aria-live="polite"></span>
+      <button class="btn ghost find-toggle" id="find-toggle" aria-expanded="false" aria-controls="find">Find</button>
+      <button class="btn ghost" id="undo" title="Undo (⌘Z)" disabled>Undo</button>
+      <details class="menu" id="view-menu">
+        <summary class="btn ghost">View</summary>
+        <div class="menu-pop">
+          <div class="segmented" id="view-mode" role="group" aria-label="Layout">
+            <button data-mode="list" aria-pressed="true" title="Every string on the screen (F)">Whole screen</button>
+            <button data-mode="focus" title="One string at a time (F)">One at a time</button>
+          </div>
+          <label class="toggle" title="Jump to the next string after rating (A)"><input type="checkbox" id="auto-advance"> Move on after rating <kbd>A</kbd></label>
+          <label class="toggle"><input type="checkbox" id="compact"> Compact cards</label>
+          <hr>
+          <button class="menu-item" type="button" id="open-voice">Voice and tone notes…</button>
+          <button class="menu-item" type="button" id="open-help">Keyboard shortcuts <kbd>?</kbd></button>
+        </div>
+      </details>
+      <button class="btn primary" id="open-export">Generate prompt <kbd>E</kbd></button>
+      </div>
+    </header>
 
-  <div class="layout">
-    <nav class="sidebar" id="sidebar" aria-label="Groups"></nav>
-    <main id="list" class="list" tabindex="-1"></main>
-    <aside class="panel" id="panel" aria-label="Screen preview"></aside>
+    <div class="layout">
+      <section class="column">
+        <main id="list" class="list" tabindex="-1"></main>
+        <footer class="nextbar" id="nextbar"></footer>
+      </section>
+      <aside class="panel" id="panel" aria-label="Screen preview"></aside>
+    </div>
   </div>
 
   <dialog id="export-dialog" class="modal wide">
     <form method="dialog" class="modal-inner">
       <header class="modal-head">
         <h2>Revision prompt</h2>
-        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+        <button class="btn ghost icon" value="close" aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
       </header>
       <div class="export-options">
         <fieldset class="segmented" id="export-target">
@@ -104,7 +113,7 @@
     <form method="dialog" class="modal-inner">
       <header class="modal-head">
         <h2>Review summary</h2>
-        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+        <button class="btn ghost icon" value="close" aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
       </header>
       <div id="summary-body" class="summary"></div>
       <footer class="modal-foot">
@@ -118,7 +127,7 @@
     <form method="dialog" class="modal-inner">
       <header class="modal-head">
         <h2>Voice and tone notes</h2>
-        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+        <button class="btn ghost icon" value="close" aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
       </header>
       <p class="muted">These notes go at the top of every prompt, and they're saved to <code>.copyproof/voice.md</code>.</p>
       <textarea id="voice-text" class="voice-text" placeholder="e.g. Plain, warm, a little dry. Say what happened, then what to do next. Sentence case everywhere. Never say &quot;Oops&quot;."></textarea>
@@ -133,7 +142,7 @@
     <form method="dialog" class="modal-inner">
       <header class="modal-head">
         <h2>Keyboard shortcuts</h2>
-        <button class="btn ghost icon" value="close" aria-label="Close">✕</button>
+        <button class="btn ghost icon" value="close" aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
       </header>
       <dl class="shortcuts">
         <div><dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>Next / previous string</dd></div>
@@ -157,7 +166,7 @@
 
   <dialog id="lightbox" class="lightbox">
     <form method="dialog">
-      <button class="lightbox-close btn ghost icon" aria-label="Close">✕</button>
+      <button class="lightbox-close btn ghost icon" aria-label="Close"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
       <div id="lightbox-frame"></div>
     </form>
   </dialog>

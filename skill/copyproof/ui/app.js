@@ -24,6 +24,7 @@ const ui = {
   editingId: null,
   openComments: new Set(),
   openPlaces: new Set(),
+  doneSeen: new Set(), // groups already finished, so "screen done" is said once
   drawing: false,
   shotTarget: null,
   summaryShown: false,
@@ -268,7 +269,7 @@ function revisionBlock(card, fb) {
   if ((last?.suggestion || '').trim()) said.push(`suggested “${esc(last.suggestion.trim())}”`);
   if ((last?.comment || '').trim()) said.push(`said “${esc(last.comment.trim())}”`);
   let verdict;
-  if (fb.verdict === 'accepted') verdict = `<span class="verdict ok">✓ Accepted</span><button class="link" data-action="verdict" data-v="">Undo</button>`;
+  if (fb.verdict === 'accepted') verdict = `<span class="verdict ok"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg> Accepted</span><button class="link" data-action="verdict" data-v="">Undo</button>`;
   else if (fb.verdict === 'rejected') verdict = `<span class="verdict no">Sent back</span><button class="link" data-action="verdict" data-v="">Undo</button>`;
   else
     verdict = `<button class="btn small" data-action="verdict" data-v="accepted">Accept <kbd>Y</kbd></button><button class="btn small ghost" data-action="verdict" data-v="rejected">Send back <kbd>R</kbd></button>`;
@@ -342,7 +343,9 @@ function cardInner(card) {
     showComment ? '' : `<button data-action="comment">Comment <kbd>C</kbd></button>`,
   ].join('');
 
+  const stamp = fb.verdict === 'accepted' ? ['ok', 'Accepted'] : fb.verdict === 'rejected' ? ['r1', 'Sent back'] : fb.rating != null ? [`r${fb.rating}`, RATING_LABELS[fb.rating]] : null;
   return `
+    ${stamp ? `<span class="stamp ${stamp[0]}">${esc(stamp[1])}</span>` : ''}
     <div class="card-meta">${meta}</div>
     ${placesBlock(card)}
     ${textBlock(card, fb)}
@@ -424,13 +427,14 @@ function render() {
   const shown = everything ? keys : keys.filter((k) => k === ui.group);
   ui.keys = keys;
   ui.groups = groups;
+  if (ui.group && groupDone(ui.group)) ui.doneSeen.add(ui.group);
   ui.visible = shown.flatMap((k) => groups.get(k).map((c) => c.id));
   if (ui.focusId && !ui.visible.includes(ui.focusId)) ui.focusId = null;
-  if (ui.mode === 'focus' && !ui.focusId && ui.visible.length) ui.focusId = ui.visible.find((id) => !reviewed(cardById.get(id))) || ui.visible[0];
+  // Something is always selected, so the keys work from the first second.
+  if (!ui.focusId && ui.visible.length) ui.focusId = ui.visible.find((id) => !reviewed(cardById.get(id))) || ui.visible[0];
 
   const list = $('#list');
   list.replaceChildren();
-  if (!prefs.introDismissed && ui.mode === 'list') list.insertAdjacentHTML('beforeend', introHtml());
   list.insertAdjacentHTML('beforeend', `<div class="focus-bar" id="focus-bar"></div>`);
 
   if (!visible.length) {
@@ -451,6 +455,7 @@ function render() {
   renderSidebar(keys, groups);
   renderCounts();
   renderFocusBar();
+  renderNextBar();
   renderPanel();
   if (ui.focusId) setFocus(ui.focusId, { scroll: ui.mode === 'focus' });
 }
@@ -495,17 +500,38 @@ function goTo(id) {
   setFocus(id);
 }
 
-function pagerHtml() {
-  const i = ui.keys.indexOf(ui.group);
-  const prev = adjacentGroup(-1);
+function stopCode(i) {
+  return `${{ screen: 'S', file: 'F', kind: 'K' }[ui.groupBy]}${String(i + 1).padStart(2, '0')}`;
+}
+
+function tickClass(card) {
+  const fb = cardFb(card);
+  if (fb.verdict === 'accepted') return 'r5';
+  if (fb.verdict === 'rejected') return 'r1';
+  return fb.rating != null ? `r${fb.rating}` : reviewed(card) ? 'r3' : '';
+}
+
+const groupDone = (k) => (ui.groups.get(k) || []).every((c) => reviewed(c) || !isLive(c));
+
+/** The bar under the strings: the keys, and where to go next. */
+function renderNextBar() {
+  const bar = $('#nextbar');
+  if (!bar) return;
+  const hints = `<span class="hints"><kbd>1</kbd>–<kbd>5</kbd> rate <kbd>Enter</kbd> rewrite <kbd>C</kbd> comment <kbd>J</kbd><kbd>K</kbd> move</span>`;
+  if (ui.query || !ui.group || !ui.keys.length) {
+    bar.className = 'nextbar';
+    bar.innerHTML = hints;
+    return;
+  }
   const next = adjacentGroup(1);
+  const done = groupDone(ui.group);
   const name = (k) => esc(ui.groupBy === 'file' ? shortPath(k) : k);
-  return `
-    <nav class="group-pager" aria-label="Screens">
-      ${prev != null ? `<button class="btn small ghost" data-action="prev-group">← ${name(prev)}</button>` : '<span></span>'}
-      <span class="muted">${i + 1} of ${ui.keys.length}</span>
-      ${next != null ? `<button class="btn small primary" data-action="next-group">Next: ${name(next)} <kbd>]</kbd></button>` : '<span></span>'}
-    </nav>`;
+  bar.className = `nextbar ${done ? 'arrived' : ''}`;
+  if (next == null) {
+    bar.innerHTML = `${hints}<span class="next-label">${done ? 'End of the line.' : 'Last stop.'}</span><button class="btn primary" data-action="export">Generate prompt <kbd>E</kbd></button>`;
+    return;
+  }
+  bar.innerHTML = `${hints}<span class="next-label">${done ? 'Screen done.' : ''} Next stop</span><button class="next-stop" data-action="next-group"><span>${name(next)}</span> <kbd>]</kbd></button>`;
 }
 
 function buildGroup({ k, i, cards: list2 }) {
@@ -516,11 +542,17 @@ function buildGroup({ k, i, cards: list2 }) {
   const done = list2.filter(reviewed).length;
   const info = ui.groupBy === 'screen' ? screenInfo(k) : {};
   const title = ui.groupBy === 'file' ? `<code>${esc(k)}</code>` : esc(k);
-  sec.innerHTML = `<div class="group-head"><div><h2>${title}</h2>${info.description ? `<span class="desc">${esc(info.description)}</span>` : ''}</div><span class="count">${done}/${list2.length}</span></div>`;
+  const ticks = list2.map((c) => `<i data-t="${c.id}" class="${tickClass(c)}"></i>`).join('');
+  sec.innerHTML = `
+    <div class="group-head">
+      <span class="seq">${stopCode(i)}</span>
+      <div class="group-title"><h2>${title}</h2>${info.description ? `<p class="desc">${esc(info.description)}</p>` : ''}</div>
+      <span class="count">${done} of ${list2.length} reviewed</span>
+      <div class="ticks" aria-hidden="true" >${ticks}</div>
+    </div>`;
   const frag = document.createDocumentFragment();
   for (const c of list2) frag.appendChild(cardEl(c));
   sec.appendChild(frag);
-  if (!ui.query && ui.keys.length > 1) sec.insertAdjacentHTML('beforeend', pagerHtml());
   return sec;
 }
 
@@ -556,25 +588,8 @@ function ensureRendered(id) {
   drainPending(Infinity);
 }
 
-function introHtml() {
-  return `
-    <div class="intro">
-      <div>
-        <strong>How to review</strong>
-        <ol>
-          <li>Rate each string from <b>1</b> (rewrite it) to <b>5</b> (love it). Use the number keys, <kbd>J</kbd>/<kbd>K</kbd> to move.</li>
-          <li>For anything weak, click the text to rewrite it, tag what's wrong, or add a comment.</li>
-          <li>Press <b>Generate prompt</b> when you're done, and Claude does the rest.</li>
-        </ol>
-      </div>
-      <button class="btn small ghost" data-action="dismiss-intro">Got it</button>
-    </div>`;
-}
-
 function renderSidebar(keys, groups) {
-  const label = { screen: 'Screens', file: 'Files', kind: 'Kinds' }[ui.groupBy];
   $('#sidebar').innerHTML =
-    `<h2>${label}</h2>` +
     keys
       .map((k, i) => {
         const list = groups.get(k);
@@ -583,7 +598,7 @@ function renderSidebar(keys, groups) {
         const name = ui.groupBy === 'file' ? shortPath(k) : k;
         const hasShot = ui.groupBy === 'screen' && state.screenshots[slugify(k)];
         const active = !ui.query && k === ui.group ? 'active' : '';
-        return `<button class="group-link ${pct === 100 ? 'done' : ''} ${active}" data-target="group-${i}" data-key="${esc(k)}" title="${esc(k)}"><span class="name">${esc(name)}${hasShot ? ' <span class="shot-dot" title="Has a screenshot">◧</span>' : ''}</span><span class="num">${done}/${list.length}</span><span class="mini"><span style="width:${pct}%"></span></span></button>`;
+        return `<button class="group-link ${pct === 100 ? 'done' : pct ? 'started' : ''} ${active}" data-target="group-${i}" data-key="${esc(k)}" title="${esc(k)}" style="--pct:${pct}%" ${active ? 'aria-current="location"' : ''}><span class="node" aria-hidden="true"></span><span class="name">${esc(name)}</span><span class="num">${done}/${list.length}${hasShot ? '<span class="visually-hidden">, has a screenshot</span>' : ''}</span><span class="here">You are here</span></button>`;
       })
       .join('');
 }
@@ -621,16 +636,19 @@ function renderProgress() {
     const ids = $$('.card', sec).map((c) => c.dataset.id);
     const done = ids.filter((id) => reviewed(cardById.get(id))).length;
     const c = $('.group-head .count', sec);
-    if (c) c.textContent = `${done}/${ids.length}`;
+    if (c) c.textContent = `${done} of ${ids.length} reviewed`;
+    for (const t of $$('.ticks i', sec)) t.className = `${tickClass(cardById.get(t.dataset.t))}${t.dataset.t === ui.focusId ? ' on' : ''}`;
     const link = $(`.group-link[data-target="${sec.id}"]`);
     if (link) {
       const pct = ids.length ? Math.round((done / ids.length) * 100) : 0;
       $('.num', link).textContent = `${done}/${ids.length}`;
-      $('.mini span', link).style.width = `${pct}%`;
+      link.style.setProperty('--pct', `${pct}%`);
       link.classList.toggle('done', pct === 100);
+      link.classList.toggle('started', pct > 0 && pct < 100);
     }
   }
   renderFocusBar();
+  renderNextBar();
 }
 
 function renderFocusBar() {
@@ -643,9 +661,9 @@ function renderFocusBar() {
   const i = ui.visible.indexOf(ui.focusId);
   const left = ui.visible.filter((id) => !reviewed(cardById.get(id))).length;
   bar.innerHTML = `
-    <button class="btn small ghost" data-action="prev" ${i <= 0 ? 'disabled' : ''}>← Previous <kbd>K</kbd></button>
+    <button class="btn small ghost" data-action="prev" ${i <= 0 ? 'disabled' : ''}><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg> Previous <kbd>K</kbd></button>
     <span><b>${i + 1}</b> of ${ui.visible.length}${ui.query ? '' : ` in ${esc(ui.group)}`} · ${left} left to review</span>
-    <button class="btn small ghost" data-action="next" ${i >= ui.visible.length - 1 ? 'disabled' : ''}>Next <kbd>J</kbd> →</button>`;
+    <button class="btn small ghost" data-action="next" ${i >= ui.visible.length - 1 ? 'disabled' : ''}>Next <kbd>J</kbd> <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>`;
 }
 
 function renderKinds() {
@@ -697,7 +715,6 @@ function renderPanel() {
   const head = `
     <div class="panel-head">
       <div>
-        <span class="eyebrow">Screen</span>
         <h3>${esc(info.name)}</h3>
         ${info.description ? `<p>${esc(info.description)}</p>` : ''}
       </div>
@@ -829,6 +846,8 @@ function setFocus(id, { scroll = true } = {}) {
   const el = id && $(`.card[data-id="${id}"]`);
   if (!el) return renderPanel();
   el.classList.add('focused');
+  $('.ticks i.on')?.classList.remove('on');
+  $(`.ticks i[data-t="${id}"]`)?.classList.add('on');
   const slot = $('[data-tags-slot]', el);
   if (slot && !slot.childElementCount) slot.innerHTML = tagsHtml(cardFb(cardById.get(id)));
   if (scroll) el.scrollIntoView({ block: ui.mode === 'focus' ? 'nearest' : 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -879,6 +898,10 @@ function setMode(mode) {
 function afterChange(card, focusSel) {
   refreshCard(card.id, focusSel);
   renderProgress();
+  if (ui.query || !ui.group || ui.doneSeen.has(ui.group) || !groupDone(ui.group)) return;
+  ui.doneSeen.add(ui.group);
+  const next = adjacentGroup(1);
+  toast(next != null ? `${ui.group} is done. Press ] for the next stop, ${next}.` : 'Every stop is done. Press E to generate the prompt.');
 }
 
 function rate(card, v) {
@@ -1202,6 +1225,11 @@ function bind() {
     document.body.classList.toggle('compact', ui.compact);
   });
   $('#undo').addEventListener('click', undo);
+  $('#find-toggle').addEventListener('click', (e) => {
+    const open = document.body.classList.toggle('find-open');
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+    if (open) $('#search').focus();
+  });
   $('#progress-text').addEventListener('click', openSummary);
 
   $('#sidebar').addEventListener('click', (e) => {
@@ -1219,18 +1247,16 @@ function bind() {
     if (first) setFocus(first.dataset.id, { scroll: false });
   });
 
+  $('#nextbar').addEventListener('click', (e) => {
+    const a = e.target.closest('[data-action]')?.dataset.action;
+    if (a === 'next-group' && adjacentGroup(1) != null) showGroup(adjacentGroup(1));
+    else if (a === 'export') openExport();
+  });
   const list = $('#list');
   list.addEventListener('click', (e) => {
     const act = e.target.closest('[data-action]');
-    if (act?.dataset.action === 'dismiss-intro') {
-      savePrefs({ introDismissed: true });
-      act.closest('.intro').remove();
-      return;
-    }
     if (act?.dataset.action === 'prev') return move(-1);
     if (act?.dataset.action === 'next') return move(1);
-    if (act?.dataset.action === 'prev-group' && adjacentGroup(-1) != null) return showGroup(adjacentGroup(-1));
-    if (act?.dataset.action === 'next-group' && adjacentGroup(1) != null) return showGroup(adjacentGroup(1));
     const cardEl2 = e.target.closest('.card');
     if (!cardEl2) return;
     const card = cardById.get(cardEl2.dataset.id);
@@ -1397,6 +1423,11 @@ function bind() {
     } else $('#voice-saved').textContent = 'Could not save. Is the server still running?';
   });
   $('#open-help').addEventListener('click', () => $('#help-dialog').showModal());
+  const menu = $('#view-menu');
+  document.addEventListener('click', (e) => {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  for (const b of $$('.menu-item', menu)) b.addEventListener('click', () => (menu.open = false));
   $('#lightbox').addEventListener('click', (e) => e.target.id === 'lightbox' && $('#lightbox').close());
 
   document.addEventListener('keydown', onKey);
@@ -1429,7 +1460,7 @@ function onKey(e) {
   const handled = () => e.preventDefault();
   if (k === 'j' || k === 'ArrowDown') return handled(), move(1);
   if (k === 'k' || k === 'ArrowUp') return handled(), move(-1);
-  if (k === '/') return handled(), $('#search').focus();
+  if (k === '/') return handled(), document.body.classList.add('find-open'), $('#search').focus();
   if (k === '?') return handled(), $('#help-dialog').showModal();
   if (k === 'e') return handled(), openExport();
   if (k === 'n') return handled(), nextUnrated();
