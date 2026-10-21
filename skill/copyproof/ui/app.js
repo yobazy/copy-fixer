@@ -35,7 +35,7 @@ let cards = [];
 const cardById = new Map();
 const cardOfItem = new Map();
 const undoStack = [];
-const FB_FIELDS = ['rating', 'tags', 'suggestion', 'comment', 'verdict'];
+const FB_FIELDS = ['rating', 'tags', 'suggestion', 'comment', 'verdict', 'flag'];
 
 function loadPrefs() {
   try {
@@ -181,7 +181,7 @@ function expertBlock(card, fb) {
     ...(ex.tags || []).map((t) => esc((TAGS.find((x) => x.id === t) || { label: t }).label)),
   ].filter(Boolean).join(' · ');
   const actions = [
-    ex.rating != null && fb.rating == null ? `<button class="link small" data-action="take-rating">Use ${ex.rating}</button>` : '',
+    ex.rating != null && fb.rating == null ? `<button class="link small" data-action="take-rating">Rate ${ex.rating} · ${esc(RATING_LABELS[ex.rating] || '')}</button>` : '',
     ex.rewrite && !(fb.suggestion || '').trim() ? `<button class="link small" data-action="take-rewrite">Use rewrite</button>` : '',
     (ex.tags || []).length && !(fb.tags || []).length ? `<button class="link small" data-action="take-tags">Add its tags</button>` : '',
   ].join('');
@@ -347,6 +347,7 @@ function cardInner(card) {
     `<span class="chip">${esc(it.kind || 'other')}</span>`,
     status ? `<span class="chip status-${it.status}">${status}</span>` : '',
     it.status === 'changed' ? `<span class="chip status-changed">Revised</span>` : '',
+    fb.flag ? `<span class="chip flag-chip">Flagged</span>` : '',
     `<button class="loc" data-action="open" title="${esc(it.file)}${it.line ? ':' + it.line : ''} · open in editor (O)">${esc(locLabel(it))}</button>`,
     card.items.length > 1
       ? `<button class="chip places-chip" data-action="places" aria-expanded="${ui.openPlaces.has(card.id)}" title="${esc(screens.join(', '))}">${card.items.length} places</button>`
@@ -376,6 +377,7 @@ function cardInner(card) {
   const actions = [
     ui.editingId === card.id || (fb.suggestion || '').trim() ? '' : `<button data-action="edit">Rewrite <kbd>Enter</kbd></button>`,
     showComment ? '' : `<button data-action="comment">Comment <kbd>C</kbd></button>`,
+    `<button data-action="flag" aria-pressed="${Boolean(fb.flag)}">${fb.flag ? 'Unflag' : 'Flag'} <kbd>G</kbd></button>`,
   ].join('');
 
   const stamp = fb.verdict === 'accepted' ? ['ok', 'Accepted'] : fb.verdict === 'rejected' ? ['r1', 'Sent back'] : fb.rating != null ? [`r${fb.rating}`, RATING_LABELS[fb.rating]] : null;
@@ -476,7 +478,7 @@ function render() {
   if (!visible.length) {
     const msg = {
       unrated: ['Everything here is reviewed', 'Open the summary, or generate the prompt.'],
-      flagged: ['Nothing flagged yet', 'Strings rated 3 or lower, or with tags, rewrites or comments, show up here.'],
+      flagged: ['Nothing flagged yet', 'Strings you flag (G), rate 3 or lower, or give tags, rewrites or comments show up here.'],
       fresh: ['No new or revised copy', 'New and changed strings show up here after a rescan.'],
       removed: ['Nothing removed', ''],
     }[ui.filter] || ['No matches', 'Try a different search or kind.'];
@@ -978,6 +980,13 @@ function rate(card, v) {
   }
 }
 
+function toggleFlag(card) {
+  mutate(card, (cur) => {
+    cur.flag = cur.flag ? undefined : true;
+  });
+  afterChange(card);
+}
+
 function toggleTag(card, tag) {
   mutate(card, (cur) => {
     const set = new Set(cur.tags || []);
@@ -1333,6 +1342,7 @@ function bind() {
       afterChange(card);
     }
     else if (a === 'tag') toggleTag(card, act.dataset.tag);
+    else if (a === 'flag') toggleFlag(card);
     else if (a === 'edit') startEdit(card);
     else if (a === 'discard') {
       mutate(card, (cur) => (cur.suggestion = undefined));
@@ -1546,7 +1556,7 @@ function onKey(e) {
     return toast(`Auto-advance ${auto.checked ? 'on' : 'off'}`);
   }
   if (!card) {
-    if (/^[0-5scmoyr]$|^Enter$/.test(k) && ui.visible.length) {
+    if (/^[0-5scgmoyr]$|^Enter$/.test(k) && ui.visible.length) {
       handled();
       setFocus(ui.visible[0]);
     }
@@ -1560,6 +1570,7 @@ function onKey(e) {
     ui.openComments.add(card.id);
     return refreshCard(card.id, 'textarea[data-field="comment"]');
   }
+  if (k === 'g') return handled(), toggleFlag(card);
   if (k === 'm') return handled(), startDrawing();
   if (k === 'y') return handled(), setVerdict(card, cardFb(card).verdict === 'accepted' ? '' : 'accepted');
   if (k === 'r') return handled(), setVerdict(card, cardFb(card).verdict === 'rejected' ? '' : 'rejected');

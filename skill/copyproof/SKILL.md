@@ -136,7 +136,7 @@ When the user asks for your own rating ("rate it yourself", "what do you think",
 2. Split the screens into batches and start parallel subagents, one per batch. Each reads `reference/expert-review.md` and `voice.md`, rates every string on its screens, and writes `{ "<id>": { rating, tags, offBrand, note, rewrite } }` to `.copyproof/expert-<batch>.json`. Give each one its screen names and the strings (ids, text, kind, when, file, line).
 3. `node SKILL_DIR/scripts/set-expert.mjs <project> .copyproof/expert-*.json`, then delete those files.
 
-The review page shows the take on each card with **Use 2**, **Use rewrite** and **Add its tags**, and a **Claude flagged** filter. It never changes the user's own ratings by itself. Report the systemic findings to the user (a term used two ways, a tone that drifts in one area), not a list of strings.
+The review page shows the take on each card with **Rate 2 · Weak** (adopts its rating), **Use rewrite** and **Add its tags**, and a **Claude flagged** filter. It never changes the user's own ratings by itself. Report the systemic findings to the user (a term used two ways, a tone that drifts in one area), not a list of strings.
 
 ## 5. Open the review
 
@@ -146,7 +146,7 @@ node SKILL_DIR/scripts/serve.mjs <project>
 
 Run it in the background. It picks a free port starting at 4477, opens the browser, and prints the URL. Give the user the URL and a short summary: how many strings, how many screens, anything you weren't sure about. Then stop and let them review. Don't wait on the server.
 
-In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems and add comments (`C`). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
+In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems, add comments (`C`), and flag a string to fix whatever its rating (`G`). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
 
 ## 6. Apply feedback
 
