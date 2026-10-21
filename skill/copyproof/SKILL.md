@@ -100,6 +100,8 @@ A screenshot belongs to a screen by its file name: `.copyproof/screenshots/<slug
 
 Screens behind auth: sign in once if there's a dev account or seed user. Never create accounts or test data against a production backend. Without a login, capture what you can and say which screens are missing. Dev-only pages that render components with sample data, like storybook pages or a `/dev-gallery`, are good stand-ins for screens behind auth. Name them after the screen whose copy they show.
 
+If the user signs in for you, ask them to do it in the browser window you're driving (other sessions may have similar windows open; mark yours, for example with a coloured bar and a distinct tab title). Some apps keep the web session in memory only, so a reload or `navigate` signs them out again. Move between screens inside the app instead: `history.pushState({}, '', path)` followed by `dispatchEvent(new PopStateEvent('popstate'))` works for React Navigation and Expo Router, or click through the UI.
+
 **Native apps**: take one screenshot per screen, without positions.
 - iOS simulator: navigate with deep links (`xcrun simctl openurl booted <url>`), then `xcrun simctl io booted screenshot <path>`.
 - Android emulator: `adb shell am start -d <deep link>`, then `adb exec-out screencap -p > <path>`.

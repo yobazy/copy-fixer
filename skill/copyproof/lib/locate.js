@@ -16,8 +16,13 @@ function locate(items, placeholderSource, screenSlug) {
     if (r.width < 1 || r.height < 1) return null;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.opacity === '0') return null;
+    if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return null;
     return r;
   };
+  /* Apps keep inactive screens mounted under the active one (React Navigation tabs and stacks) and mark
+     them aria-hidden, so a match there is a last resort: it's usually the same string on a screen you can't see.
+     Block comment on purpose: the snippet is collapsed onto one line. */
+  const hiddenScreen = (el) => !!el.closest('[aria-hidden="true"], [inert]');
   const els = [...document.body.querySelectorAll('*')].filter((el) => !['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'].includes(el.tagName));
   const textOf = new Map();
   const text = (el) => {
@@ -48,15 +53,15 @@ function locate(items, placeholderSource, screenSlug) {
       if (used.has(el)) return;
       const r = visible(el);
       if (!r) return;
-      const area = r.width * r.height;
+      const area = r.width * r.height + (hiddenScreen(el) ? 1e12 : 0);
       if (area < bestArea) {
         best = { el, r };
         bestArea = area;
       }
     };
     for (const el of els) if (ATTRS.some((a) => el.hasAttribute(a) && test(el.getAttribute(a)))) consider(el);
-    if (!best) for (const el of els) if (test(text(el))) consider(el);
-    if (!best && norm(item.text).length > 12) {
+    if (!best || bestArea >= 1e12) for (const el of els) if (test(text(el))) consider(el);
+    if ((!best || bestArea >= 1e12) && norm(item.text).length > 12) {
       const needle = norm(item.text).split(new RegExp(placeholderSource, 'gi'))[0];
       if (needle.length > 8) for (const el of els) if (text(el).includes(needle)) consider(el);
     }
