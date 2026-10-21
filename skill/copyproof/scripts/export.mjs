@@ -25,6 +25,6 @@ if (!flagged.length) {
   console.error('Nothing flagged yet. Rate some strings 3 or lower, or add notes, then export again.');
   process.exit(2);
 }
-const prompt = buildPrompt({ copy, feedback, voice: readText(p.voice), screenshots: findScreenshots(p) }, options);
+const prompt = buildPrompt({ copy, feedback, voice: readText(p.voice), screenshots: findScreenshots(p), expert: readJson(p.expert) }, options);
 writeAtomic(args.out || p.prompt, prompt);
 process.stdout.write(prompt);

@@ -6,7 +6,7 @@ import {
 const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 
-const state = { copy: null, feedback: { version: 1, items: {} }, voice: '', screenshots: {}, screenshotTimes: {}, root: '' };
+const state = { copy: null, feedback: { version: 1, items: {} }, expert: { items: {} }, voice: '', screenshots: {}, screenshotTimes: {}, root: '' };
 const prefs = loadPrefs();
 const ui = {
   filter: 'all',
@@ -156,7 +156,41 @@ function matchesFilter(card, filter = ui.filter) {
   if (filter === 'unrated') return !reviewed(card);
   if (filter === 'flagged') return isFlagged(fbOf(it.id), 3);
   if (filter === 'fresh') return it.status === 'new' || it.status === 'changed';
+  if (filter === 'claude') return expertFlagged(card);
   return true;
+}
+
+/** The expert pass's view of a card (Claude's take), from expert.json; null when there's none. */
+function exOf(card) {
+  const items = (state.expert && state.expert.items) || {};
+  for (const it of card.items) if (items[it.id]) return items[it.id];
+  return null;
+}
+
+function expertFlagged(card) {
+  const ex = exOf(card);
+  return Boolean(ex && ((ex.rating != null && ex.rating <= 2) || ex.offBrand));
+}
+
+function expertBlock(card, fb) {
+  const ex = exOf(card);
+  if (!ex) return '';
+  const head = [
+    ex.rating != null ? `<b>${ex.rating}</b> ${esc(RATING_LABELS[ex.rating] || '')}` : '',
+    ex.offBrand ? '<span class="expert-off">Off-brand</span>' : '',
+    ...(ex.tags || []).map((t) => esc((TAGS.find((x) => x.id === t) || { label: t }).label)),
+  ].filter(Boolean).join(' · ');
+  const actions = [
+    ex.rating != null && fb.rating == null ? `<button class="link small" data-action="take-rating">Use ${ex.rating}</button>` : '',
+    ex.rewrite && !(fb.suggestion || '').trim() ? `<button class="link small" data-action="take-rewrite">Use rewrite</button>` : '',
+    (ex.tags || []).length && !(fb.tags || []).length ? `<button class="link small" data-action="take-tags">Add its tags</button>` : '',
+  ].join('');
+  return `<div class="expert">
+    <p class="expert-title">Claude's take${head ? ` · ${head}` : ''}</p>
+    ${ex.note ? `<p class="expert-note">${esc(ex.note)}</p>` : ''}
+    ${ex.rewrite ? `<p class="expert-rewrite">Try: “${esc(ex.rewrite)}”</p>` : ''}
+    ${actions ? `<div class="expert-actions">${actions}</div>` : ''}
+  </div>`;
 }
 
 function matchesKind(card) {
@@ -166,7 +200,8 @@ function matchesKind(card) {
 function matchesQuery(card) {
   if (!ui.query) return true;
   const fb = cardFb(card);
-  const hay = [...card.items.flatMap((it) => [it.text, it.file, it.screen, it.context, it.key, it.kind]), fb.suggestion, fb.comment].join(' ').toLowerCase();
+  const ex = exOf(card);
+  const hay = [...card.items.flatMap((it) => [it.text, it.file, it.screen, it.context, it.when, it.key, it.kind]), fb.suggestion, fb.comment, ex && ex.note].join(' ').toLowerCase();
   return ui.query.split(/\s+/).every((w) => hay.includes(w));
 }
 
@@ -351,6 +386,7 @@ function cardInner(card) {
     ${textBlock(card, fb)}
     ${it.when ? `<p class="context"><span class="when-label">Appears</span> ${esc(it.when)}</p>` : it.context ? `<p class="context">${esc(it.context)}</p>` : ''}
     ${revisionBlock(card, fb)}
+    ${expertBlock(card, fb)}
     <div class="rating" role="radiogroup" aria-label="Rating">${rating}</div>
     ${nudge}
     <div class="tags" role="group" aria-label="Problems" data-tags-slot>${tags}</div>
@@ -614,12 +650,13 @@ function renderCounts() {
     unrated: all.length - done,
     flagged,
     fresh: all.filter((c) => c.lead.status === 'new' || c.lead.status === 'changed').length,
+    claude: all.filter(expertFlagged).length,
     removed: cards.length - all.length,
   };
   for (const btn of $$('#filters button')) {
     const f = btn.dataset.filter;
     btn.innerHTML = `${btn.dataset.label} <span class="count">${counts[f]}</span>`;
-    if (f === 'removed' || f === 'fresh') btn.hidden = counts[f] === 0 && ui.filter !== f;
+    if (f === 'removed' || f === 'fresh' || f === 'claude') btn.hidden = counts[f] === 0 && ui.filter !== f;
   }
   // Finished everything for the first time this session: show where things stand.
   if (renderCounts.lastLeft > 0 && counts.unrated === 0 && all.length && !ui.summaryShown) {
@@ -1110,7 +1147,7 @@ function renderExport() {
   savePrefs({ export: opts });
   const { flagged, exemplars } = selectForPrompt(state.copy, state.feedback, opts);
   const shots = Object.fromEntries(Object.entries(state.screenshots).map(([k, v]) => [k, v.split('?')[0]]));
-  const text = flagged.length ? buildPrompt({ copy: state.copy, feedback: state.feedback, voice: state.voice, screenshots: shots }, opts) : '';
+  const text = flagged.length ? buildPrompt({ copy: state.copy, feedback: state.feedback, voice: state.voice, screenshots: shots, expert: state.expert }, opts) : '';
   $('#export-text').value = text || 'Nothing to send yet.\n\nRate strings 3 or lower, or add tags, a rewrite or a comment, and they show up here.';
   $('#export-copy').disabled = !text;
   const words = text ? text.split(/\s+/).length : 0;
@@ -1287,6 +1324,14 @@ function bind() {
     if (!act) return;
     const a = act.dataset.action;
     if (a === 'rate') rate(card, Number(act.dataset.v));
+    else if (a === 'take-rating') rate(card, exOf(card).rating);
+    else if (a === 'take-rewrite') {
+      mutate(card, (cur) => (cur.suggestion = exOf(card).rewrite));
+      afterChange(card);
+    } else if (a === 'take-tags') {
+      mutate(card, (cur) => (cur.tags = [...(exOf(card).tags || [])]));
+      afterChange(card);
+    }
     else if (a === 'tag') toggleTag(card, act.dataset.tag);
     else if (a === 'edit') startEdit(card);
     else if (a === 'discard') {

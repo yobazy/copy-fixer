@@ -162,7 +162,7 @@ function location(it) {
   return lines ? `${it.file}:${lines}` : it.file;
 }
 
-export function buildPrompt({ copy, feedback, voice, screenshots = {} }, options = {}) {
+export function buildPrompt({ copy, feedback, voice, screenshots = {}, expert }, options = {}) {
   const opts = { ...DEFAULT_PROMPT_OPTIONS, ...options };
   const entries = (feedback && feedback.items) || {};
   const { flagged, exemplars } = selectForPrompt(copy, feedback, opts);
@@ -222,6 +222,8 @@ export function buildPrompt({ copy, feedback, voice, screenshots = {} }, options
       }
       if ((fb.suggestion || '').trim()) out.push(`   - My suggested rewrite: ${quote(fb.suggestion.trim())}`);
       if ((fb.comment || '').trim()) out.push(`   - Notes: ${fb.comment.trim()}`);
+      const ex = expert && expert.items && expert.items[it.id];
+      if (ex && ex.note) out.push(`   - An earlier expert pass said: ${ex.note}${ex.rewrite ? ` (it suggested ${quote(ex.rewrite)})` : ''}`);
       const ph = findPlaceholders(it.text);
       if (ph.length) out.push(`   - Keep these placeholders: ${ph.map((p) => '`' + p + '`').join(' ')}`);
       const shot = agent && it.screen ? screenshots[slugify(it.screen)] : null;

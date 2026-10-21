@@ -489,6 +489,13 @@ del + ins { margin-left: 3px; }
 .card:not(.focused)[data-rating]:not([data-rating=""]) .rating { display: none; }
 
 .nudge { margin: 0 0 10px; color: var(--signal); font-size: 13.5px; font-weight: 650; }
+.expert { margin: 2px 0 12px; padding: 10px 12px; border-left: 3px solid var(--muted); background: color-mix(in srgb, var(--muted) 8%, transparent); max-width: 72ch; }
+.expert p { margin: 0 0 4px; font-size: 13.5px; }
+.expert-title { font-size: 11.5px !important; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.expert-title b { color: var(--text); }
+.expert-off { color: var(--signal); }
+.expert-rewrite { font-weight: 650; }
+.expert-actions { display: flex; gap: 12px; margin-top: 4px; }
 .card:not(.focused) .nudge { color: var(--r1); }
 
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
@@ -618,6 +625,7 @@ body.mode-focus .card.focused .copy-text, body.mode-focus .edit-box { font-size:
 body.compact .card { padding: 10px 16px; margin-bottom: 4px; }
 body.compact .card:not(.focused) .copy-text { font-size: 16px; }
 body.compact .card:not(.focused) .context { display: none; }
+body.compact .card:not(.focused) .expert { display: none; }
 body.compact .card-meta { margin-bottom: 2px; }
 
 /* ---------- Dialogs ---------- */

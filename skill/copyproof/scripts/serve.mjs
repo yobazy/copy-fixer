@@ -134,6 +134,7 @@ async function handle(req, res) {
       copy: readJson(p.copy),
       feedback: readJson(p.feedback, { version: 1, items: {} }),
       voice: readText(p.voice),
+      expert: readJson(p.expert, { version: 1, items: {} }),
       screenshots: findScreenshots(p),
       screenshotTimes: Object.fromEntries(
         Object.entries(findScreenshots(p)).map(([slug, rel]) => [slug, statSync(join(p.root, rel)).mtime.toISOString()])

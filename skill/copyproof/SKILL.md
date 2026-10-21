@@ -128,6 +128,16 @@ node SKILL_DIR/scripts/set-when.mjs <project> .copyproof/when-*.json
 
 Delete the `when-*.json` files afterwards. Notes survive rescans. In the review page a string shows **Appears …** under its text, and when it isn't on the screenshot the panel says where it shows up and draws a dashed box around its trigger.
 
+### Expert pass (optional, "Claude's take")
+
+When the user asks for your own rating ("rate it yourself", "what do you think", "flag what's off-brand"), do an expert pass after the scan and notes:
+
+1. Make sure `.copyproof/voice.md` exists. If not, write one first from the product's docs, its brand guide and the user's existing comments in `feedback.json`: what the product is, who reads it, 3 or 4 voice traits with does/doesn't, tone by moment, and a glossary. Show it to the user; it steers everything after.
+2. Split the screens into batches and start parallel subagents, one per batch. Each reads `reference/expert-review.md` and `voice.md`, rates every string on its screens, and writes `{ "<id>": { rating, tags, offBrand, note, rewrite } }` to `.copyproof/expert-<batch>.json`. Give each one its screen names and the strings (ids, text, kind, when, file, line).
+3. `node SKILL_DIR/scripts/set-expert.mjs <project> .copyproof/expert-*.json`, then delete those files.
+
+The review page shows the take on each card with **Use 2**, **Use rewrite** and **Add its tags**, and a **Claude flagged** filter. It never changes the user's own ratings by itself. Report the systemic findings to the user (a term used two ways, a tone that drifts in one area), not a list of strings.
+
 ## 5. Open the review
 
 ```bash

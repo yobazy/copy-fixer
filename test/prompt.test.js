@@ -110,3 +110,11 @@ test('the prompt says where a string appears, preferring the when note', async (
   const out = buildPrompt({ copy, feedback: { items: { a1: { rating: 2 } } } });
   assert.match(out, /Where it appears: Under Pay after a decline\./);
 });
+
+test('an earlier expert note rides along in the prompt for strings the user flagged', async () => {
+  const { buildPrompt } = await import('../skill/copyproof/lib/core.js');
+  const copy = { project: 'p', items: [{ id: 'a1', text: 'Operation failed', file: 'src/A.tsx', line: 9, kind: 'error', screen: 'Checkout' }] };
+  const out = buildPrompt({ copy, feedback: { items: { a1: { rating: 1 } } }, expert: { items: { a1: { rating: 1, note: 'Robotic, no next step.', rewrite: "Couldn't pay. Try another card." } } } });
+  assert.match(out, /An earlier expert pass said: Robotic, no next step\./);
+  assert.match(out, /Try another card/);
+});

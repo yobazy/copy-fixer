@@ -33,6 +33,7 @@ export function paths(projectArg) {
     copy: join(data, 'copy.json'),
     feedback: join(data, 'feedback.json'),
     voice: join(data, 'voice.md'),
+    expert: join(data, 'expert.json'),
     prompt: join(data, 'prompt.md'),
     scanDir: join(data, 'scan'),
     screenshots: join(data, 'screenshots'),
