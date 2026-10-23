@@ -350,7 +350,7 @@ function cardInner(card) {
     status ? `<span class="chip status-${it.status}">${status}</span>` : '',
     it.status === 'changed' ? `<span class="chip status-changed">Revised</span>` : '',
     fb.later ? `<span class="chip later-chip">For later</span>` : '',
-    isSent(fb) ? `<span class="chip sent-chip" title="Sent to Claude Code to apply. Change the feedback to send it again.">Sent</span>` : '',
+    isSent(fb) ? `<span class="chip sent-chip" title="Queued for Claude Code to apply. Change the feedback to queue it again.">Queued</span>` : '',
     `<button class="loc" data-action="open" title="${esc(it.file)}${it.line ? ':' + it.line : ''} · open in editor (O)">${esc(locLabel(it))}</button>`,
     card.items.length > 1
       ? `<button class="chip places-chip" data-action="places" aria-expanded="${ui.openPlaces.has(card.id)}" title="${esc(screens.join(', '))}">${card.items.length} places</button>`
@@ -605,7 +605,7 @@ async function applyScreen(screen) {
   for (const c of cardById.values()) if (c.items.some((it) => sentIds.has(it.id))) refreshCard(c.id);
   renderProgress();
   const n = new Set(flagged.map((it) => normalizeText(it.text))).size;
-  toast(`Sent ${plural(n, 'string')} from ${screen}. In Claude Code, say “apply”.`);
+  toast(`Queued ${plural(n, 'string')} from ${screen} for Claude. Say “apply” in Claude Code when you’re ready.`);
 }
 
 function buildGroup({ k, i, cards: list2 }) {
@@ -1204,7 +1204,7 @@ function renderExport() {
   const words = text ? text.split(/\s+/).length : 0;
   const n = (text.match(/^\d+\. /gm) || []).length;
   $('#export-summary').textContent = flagged.length
-    ? `${plural(n, 'string')} to revise${exemplars.length ? ` · ${plural(exemplars.length, 'tone example')}` : ''} · about ${words.toLocaleString()} words${sentCount ? ` · ${sentCount} already sent left out` : ''}`
+    ? `${plural(n, 'string')} to revise${exemplars.length ? ` · ${plural(exemplars.length, 'tone example')}` : ''} · about ${words.toLocaleString()} words${sentCount ? ` · ${sentCount} already queued left out` : ''}`
     : '';
   clearTimeout(promptSaveTimer);
   if (text) {
