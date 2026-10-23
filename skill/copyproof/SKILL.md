@@ -25,7 +25,7 @@ Everything lives in `<project>/.copyproof/`. A project reviewed before the renam
 - **Rescan** (`copy.json` exists, or the user says "rescan" or "refresh"): step 1 with `--since`, then steps 2 to 5. Ratings carry over. Strings whose text changed come back as **Revised**, with the old feedback shown alongside.
 - **Review only** ("open copyproof", "open the copy review"): step 5.
 - **With screenshots** ("with screenshots", `--screenshots`): add step 4. Otherwise skip it, but mention once that it's available. Reviewing next to the real screen is much easier.
-- **Apply** ("apply my copy feedback"): step 6.
+- **Apply** ("apply", "apply my copy feedback"): step 6.
 - **Scoped** ("review the copy in onboarding", a path): restrict step 1 to those files.
 
 ## 1. Survey the project
@@ -146,18 +146,20 @@ node SKILL_DIR/scripts/serve.mjs <project>
 
 Run it in the background. It picks a free port starting at 4477, opens the browser, and prints the URL. Give the user the URL and a short summary: how many strings, how many screens, anything you weren't sure about. Then stop and let them review. Don't wait on the server.
 
-In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems, add comments (`C`), and mark a string to come back to when you're not ready to decide (`G`, shown under **For later**; it doesn't go into the prompt). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
+In the page, you go one screen at a time (pick one in the sidebar, or `[`/`]`), and each string sits next to its screen, highlighted. You rate 1–5 (`J`/`K` to move, `1`–`5` to rate) and click the text, or press `Enter`, to rewrite it in place. You can also tag problems, add comments (`C`), and mark a string to come back to when you're not ready to decide (`G`, shown under **For later**; it doesn't go into the prompt). Identical text in several places is one card, so you rate it once. `F` switches to focus mode, one string at a time. When a screen is done, **Apply this screen** (in its header) queues that screen's feedback for Claude Code as a batch and marks those strings **Sent**, so the user can keep reviewing while you apply it; editing a sent string's feedback makes it pending again. **Generate prompt** builds the revision prompt, copies it, and saves it to `.copyproof/prompt.md`. Feedback saves to disk as you go, so you can close the page and come back later with "open the copy review".
 
 ## 6. Apply feedback
 
-When the user says "apply my copy feedback" (or similar):
+When the user says "apply", "apply my copy feedback" (or similar):
 
-1. Use `.copyproof/prompt.md` if it's newer than `feedback.json`. Otherwise regenerate it with
-   `node SKILL_DIR/scripts/export.mjs <project>` (add `--max-rating N` if they want a different cutoff).
+1. Check for batches first: `node SKILL_DIR/scripts/batches.mjs <project>` prints every screen the user sent with **Apply this screen** and you haven't applied yet, oldest first. If there are any, apply exactly those (the user may still be reviewing other screens, so don't touch anything else), and when they're done run `node SKILL_DIR/scripts/batches.mjs <project> --done <file…>` with the batch file names. New batches can arrive while you work; run it again at the end and apply those too.
+
+   With no batches, use `.copyproof/prompt.md` if it's newer than `feedback.json`. Otherwise regenerate it with
+   `node SKILL_DIR/scripts/export.mjs <project> --pending` (add `--max-rating N` if they want a different cutoff; `--screen "<name>"` for one screen).
 2. Follow the prompt. It lists each string with its location, rating, tags, suggestion and notes, and the rules for revising. Where the user wrote a suggested rewrite, use it.
 3. Edit only the copy. Keep placeholders, i18n keys and code untouched. When copy is in a translation file, change the base language and list the keys that need retranslation.
 4. Report a before/after table and anything you skipped.
-5. Offer a rescan (step 1 with `--since`, then 3, then 4 for the screens that changed, then 5). The revised strings show up under **New & revised** with a before/after diff, and the user accepts each one (`Y`) or sends it back with a note (`R`). Sent-back strings go into the next prompt along with the rejected attempt.
+5. After a batch, rescan just the files you changed (step 1 with `--since`, then 3, then 4 for those screens) without asking, so the user sees the result while they keep reviewing. Otherwise offer a rescan (step 1 with `--since`, then 3, then 4 for the screens that changed, then 5). The revised strings show up under **New & revised** with a before/after diff, and the user accepts each one (`Y`) or sends it back with a note (`R`). Sent-back strings go into the next prompt along with the rejected attempt.
 
 ## Notes
 

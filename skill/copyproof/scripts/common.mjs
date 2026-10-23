@@ -35,6 +35,7 @@ export function paths(projectArg) {
     voice: join(data, 'voice.md'),
     expert: join(data, 'expert.json'),
     prompt: join(data, 'prompt.md'),
+    batches: join(data, 'batches'),
     scanDir: join(data, 'scan'),
     screenshots: join(data, 'screenshots'),
   };

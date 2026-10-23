@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Builds the revision prompt from saved feedback without opening the UI.
 //
-//   node export.mjs [project] [--target agent|chat] [--max-rating 3] [--no-exemplars] [--out file]
+//   node export.mjs [project] [--target agent|chat] [--max-rating 3] [--no-exemplars] [--screen name] [--pending] [--out file]
+//
+// --screen limits it to one screen; --pending leaves out strings already sent in a batch.
 //
 // Prints the prompt, and writes it to .copyproof/prompt.md (or --out).
 import { buildPrompt, selectForPrompt } from '../lib/core.js';
@@ -19,6 +21,8 @@ const options = {
   target: args.target === 'chat' ? 'chat' : 'agent',
   maxRating: args['max-rating'] ? Number(args['max-rating']) : 3,
   includeExemplars: !args['no-exemplars'],
+  pending: Boolean(args.pending),
+  screen: typeof args.screen === 'string' ? args.screen : null,
 };
 const { flagged } = selectForPrompt(copy, feedback, options);
 if (!flagged.length) {

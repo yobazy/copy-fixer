@@ -165,6 +165,15 @@ async function handle(req, res) {
     return send(res, 200, { ok: true, path: `${DATA_DIR}/prompt.md` });
   }
 
+  // One screen's feedback, queued for Claude Code to apply ("apply" picks up every batch not yet done).
+  if (req.method === 'PUT' && route === '/api/batch') {
+    const screen = url.searchParams.get('screen') || 'all';
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const name = `${stamp}-${slugify(screen) || 'screen'}.md`;
+    writeAtomic(join(p.batches, name), (await readBody(req)).toString('utf8'));
+    return send(res, 200, { ok: true, path: `${DATA_DIR}/batches/${name}` });
+  }
+
   const boxRoute = route.match(/^\/api\/box\/([\w-]+)$/);
   if (boxRoute && req.method === 'PUT') {
     const copy = readJson(p.copy);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  buildPrompt, findPlaceholders, groupEntries, isFlagged, isReviewed, selectForPrompt, similarity, slugify, wordDiff,
+  buildPrompt, findPlaceholders, groupEntries, isFlagged, isReviewed, isSent, selectForPrompt, sentMark, similarity, slugify, wordDiff,
 } from '../skill/copyproof/lib/core.js';
 
 const copy = {
@@ -125,4 +125,24 @@ test('marking a string for later keeps it out of the prompt', () => {
   assert.equal(isReviewed({ later: true }), false);
   const { flagged } = selectForPrompt(copy, { items: { a1: { rating: 4, later: true } } });
   assert.equal(flagged.length, 0);
+});
+
+test('a screen batch takes that screen plus the same text elsewhere, and sent strings drop out', () => {
+  const copy = {
+    items: [
+      { id: 'a', text: 'Save', screen: 'Settings', file: 'a.tsx' },
+      { id: 'b', text: 'Save', screen: 'Profile', file: 'b.tsx' },
+      { id: 'c', text: 'Cancel', screen: 'Profile', file: 'b.tsx' },
+      { id: 'd', text: 'Done', screen: 'Settings', file: 'a.tsx' },
+    ],
+  };
+  const fb = { items: { a: { rating: 2 }, b: { rating: 2 }, c: { rating: 1 }, d: { rating: 3 } } };
+  const ids = (o) => selectForPrompt(copy, fb, o).flagged.map((x) => x.id).sort();
+  assert.deepEqual(ids({ screen: 'Settings' }), ['a', 'b', 'd']);
+  fb.items.d.sent = sentMark(fb.items.d);
+  assert.equal(isSent(fb.items.d), true);
+  assert.deepEqual(ids({ screen: 'Settings', pending: true }), ['a', 'b']);
+  fb.items.d.comment = 'shorter';
+  assert.equal(isSent(fb.items.d), false, 'editing after sending makes it pending again');
+  assert.deepEqual(ids({ pending: true }), ['a', 'b', 'c', 'd']);
 });

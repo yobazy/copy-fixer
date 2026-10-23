@@ -106,17 +106,36 @@ export const DEFAULT_PROMPT_OPTIONS = {
   target: 'agent', // 'agent' = a coding agent with repo access; 'chat' = any chat model
   maxRating: 3,
   includeExemplars: true,
+  pending: false, // leave out strings already sent in a batch
+  screen: null, // only this screen's strings (a batch)
 };
 
 function feedbackKey(fb = {}) {
   return JSON.stringify([fb.rating ?? null, [...(fb.tags || [])].sort(), (fb.suggestion || '').trim(), (fb.comment || '').trim(), fb.verdict || null]);
 }
 
+/** Already sent to be applied, and not changed since. Editing the feedback makes it pending again. */
+export function isSent(fb) {
+  return Boolean(fb && fb.sent && fb.sent.key === feedbackKey(fb));
+}
+
+/** What to store on a feedback entry when it goes out in a batch. */
+export function sentMark(fb, at = new Date().toISOString()) {
+  return { key: feedbackKey(fb), at };
+}
+
 export function selectForPrompt(copy, feedback, options = {}) {
   const opts = { ...DEFAULT_PROMPT_OPTIONS, ...options };
   const entries = (feedback && feedback.items) || {};
   const items = (copy.items || []).filter((it) => it.status !== 'removed');
-  const flagged = items.filter((it) => isFlagged(entries[it.id], opts.maxRating));
+  let flagged = items.filter((it) => isFlagged(entries[it.id], opts.maxRating));
+  if (opts.pending) flagged = flagged.filter((it) => !isSent(entries[it.id]));
+  if (opts.screen) {
+    // One screen's strings, plus the same text with the same feedback elsewhere, so it changes everywhere at once.
+    const sameAs = (it) => normalizeText(it.text) + '\u0000' + feedbackKey(entries[it.id]);
+    const keys = new Set(flagged.filter((it) => it.screen === opts.screen).map(sameAs));
+    flagged = flagged.filter((it) => keys.has(sameAs(it)));
+  }
   let exemplars = [];
   if (opts.includeExemplars) {
     const seen = new Set();
@@ -172,7 +191,7 @@ export function buildPrompt({ copy, feedback, voice, screenshots = {}, expert },
   const n = grouped.length;
   const out = [];
 
-  out.push(`# Copy revision: ${project}`);
+  out.push(`# Copy revision: ${project}${opts.screen ? ` · ${opts.screen}` : ''}`);
   out.push('');
   out.push(
     agent

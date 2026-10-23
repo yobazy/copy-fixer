@@ -1,6 +1,6 @@
 import {
-  KINDS, RATING_LABELS, TAGS, buildPrompt, findPlaceholders, isFlagged, isReviewed, normalizeText,
-  selectForPrompt, similarity, slugify, wordDiff,
+  KINDS, RATING_LABELS, TAGS, buildPrompt, findPlaceholders, isFlagged, isReviewed, isSent, normalizeText,
+  selectForPrompt, sentMark, similarity, slugify, wordDiff,
 } from '/lib/core.js';
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -156,6 +156,7 @@ function matchesFilter(card, filter = ui.filter) {
   if (filter === 'unrated') return !reviewed(card);
   if (filter === 'flagged') return isFlagged(fbOf(it.id), 3);
   if (filter === 'later') return Boolean(cardFb(card).later);
+  if (filter === 'sent') return isSent(cardFb(card));
   if (filter === 'fresh') return it.status === 'new' || it.status === 'changed';
   if (filter === 'claude') return expertFlagged(card);
   return true;
@@ -349,6 +350,7 @@ function cardInner(card) {
     status ? `<span class="chip status-${it.status}">${status}</span>` : '',
     it.status === 'changed' ? `<span class="chip status-changed">Revised</span>` : '',
     fb.later ? `<span class="chip later-chip">For later</span>` : '',
+    isSent(fb) ? `<span class="chip sent-chip" title="Sent to Claude Code to apply. Change the feedback to send it again.">Sent</span>` : '',
     `<button class="loc" data-action="open" title="${esc(it.file)}${it.line ? ':' + it.line : ''} · open in editor (O)">${esc(locLabel(it))}</button>`,
     card.items.length > 1
       ? `<button class="chip places-chip" data-action="places" aria-expanded="${ui.openPlaces.has(card.id)}" title="${esc(screens.join(', '))}">${card.items.length} places</button>`
@@ -574,6 +576,38 @@ function renderNextBar() {
   bar.innerHTML = `${hints}<span class="next-label">${done ? 'Screen done.' : ''} Next stop</span><button class="next-stop" data-action="next-group"><span>${name(next)}</span> <kbd>]</kbd></button>`;
 }
 
+/** Flagged strings on this screen that haven't been sent yet. */
+function pendingOn(screen) {
+  return selectForPrompt(state.copy, state.feedback, { ...exportOptions(), screen, pending: true, includeExemplars: false }).flagged;
+}
+
+function applyButton(screen) {
+  const n = new Set(pendingOn(screen).filter((it) => it.screen === screen).map((it) => normalizeText(it.text))).size;
+  return `<button class="btn small apply-screen" data-apply="${esc(screen)}" ${n ? '' : 'disabled'} title="Queue this screen's feedback for Claude Code. Then say “apply” there.">${n ? `Apply this screen · ${n}` : 'Nothing to apply'}</button>`;
+}
+
+/** Queue one screen's pending feedback as a batch for Claude Code, and mark it sent. */
+async function applyScreen(screen) {
+  const opts = { ...exportOptions(), screen, pending: true };
+  const { flagged } = selectForPrompt(state.copy, state.feedback, opts);
+  if (!flagged.length) return toast('Nothing to apply on this screen');
+  const shots = Object.fromEntries(Object.entries(state.screenshots).map(([k, v]) => [k, v.split('?')[0]]));
+  const text = buildPrompt({ copy: state.copy, feedback: state.feedback, voice: state.voice, screenshots: shots, expert: state.expert }, opts);
+  const res = await fetch(`/api/batch?screen=${encodeURIComponent(screen)}`, { method: 'PUT', body: text }).catch(() => null);
+  if (!res || !res.ok) return toast('Could not save the batch');
+  const at = new Date().toISOString();
+  for (const it of flagged) {
+    const e = state.feedback.items[it.id];
+    if (e) e.sent = sentMark(e, at);
+  }
+  scheduleSave();
+  const sentIds = new Set(flagged.map((it) => it.id));
+  for (const c of cardById.values()) if (c.items.some((it) => sentIds.has(it.id))) refreshCard(c.id);
+  renderProgress();
+  const n = new Set(flagged.map((it) => normalizeText(it.text))).size;
+  toast(`Sent ${plural(n, 'string')} from ${screen}. In Claude Code, say “apply”.`);
+}
+
 function buildGroup({ k, i, cards: list2 }) {
   const sec = document.createElement('section');
   sec.className = 'group';
@@ -587,7 +621,7 @@ function buildGroup({ k, i, cards: list2 }) {
     <div class="group-head">
       <span class="seq">${stopCode(i)}</span>
       <div class="group-title"><h2>${title}</h2>${info.description ? `<p class="desc">${esc(info.description)}</p>` : ''}</div>
-      <span class="count">${done} of ${list2.length} reviewed</span>
+      <div class="group-side"><span class="count">${done} of ${list2.length} reviewed</span>${ui.groupBy === 'screen' ? applyButton(k) : ''}</div>
       <div class="ticks" aria-hidden="true" >${ticks}</div>
     </div>`;
   const frag = document.createDocumentFragment();
@@ -654,6 +688,7 @@ function renderCounts() {
     unrated: all.length - done,
     flagged,
     later: all.filter((c) => cardFb(c).later).length,
+    sent: all.filter((c) => isSent(cardFb(c))).length,
     fresh: all.filter((c) => c.lead.status === 'new' || c.lead.status === 'changed').length,
     claude: all.filter(expertFlagged).length,
     removed: cards.length - all.length,
@@ -661,7 +696,7 @@ function renderCounts() {
   for (const btn of $$('#filters button')) {
     const f = btn.dataset.filter;
     btn.innerHTML = `${btn.dataset.label} <span class="count">${counts[f]}</span>`;
-    if (f === 'removed' || f === 'fresh' || f === 'claude' || f === 'later') btn.hidden = counts[f] === 0 && ui.filter !== f;
+    if (f === 'removed' || f === 'fresh' || f === 'claude' || f === 'later' || f === 'sent') btn.hidden = counts[f] === 0 && ui.filter !== f;
   }
   // Finished everything for the first time this session: show where things stand.
   if (renderCounts.lastLeft > 0 && counts.unrated === 0 && all.length && !ui.summaryShown) {
@@ -679,6 +714,8 @@ function renderProgress() {
     const done = ids.filter((id) => reviewed(cardById.get(id))).length;
     const c = $('.group-head .count', sec);
     if (c) c.textContent = `${done} of ${ids.length} reviewed`;
+    const apply = $('.apply-screen', sec);
+    if (apply) apply.outerHTML = applyButton(sec.dataset.key);
     for (const t of $$('.ticks i', sec)) t.className = `${tickClass(cardById.get(t.dataset.t))}${t.dataset.t === ui.focusId ? ' on' : ''}`;
     const link = $(`.group-link[data-target="${sec.id}"]`);
     if (link) {
@@ -1157,6 +1194,8 @@ let promptSaveTimer = null;
 function renderExport() {
   const opts = exportOptions();
   savePrefs({ export: opts });
+  opts.pending = true;
+  const sentCount = liveCards().filter((c) => isSent(cardFb(c))).length;
   const { flagged, exemplars } = selectForPrompt(state.copy, state.feedback, opts);
   const shots = Object.fromEntries(Object.entries(state.screenshots).map(([k, v]) => [k, v.split('?')[0]]));
   const text = flagged.length ? buildPrompt({ copy: state.copy, feedback: state.feedback, voice: state.voice, screenshots: shots, expert: state.expert }, opts) : '';
@@ -1165,7 +1204,7 @@ function renderExport() {
   const words = text ? text.split(/\s+/).length : 0;
   const n = (text.match(/^\d+\. /gm) || []).length;
   $('#export-summary').textContent = flagged.length
-    ? `${plural(n, 'string')} to revise${exemplars.length ? ` · ${plural(exemplars.length, 'tone example')}` : ''} · about ${words.toLocaleString()} words`
+    ? `${plural(n, 'string')} to revise${exemplars.length ? ` · ${plural(exemplars.length, 'tone example')}` : ''} · about ${words.toLocaleString()} words${sentCount ? ` · ${sentCount} already sent left out` : ''}`
     : '';
   clearTimeout(promptSaveTimer);
   if (text) {
@@ -1326,6 +1365,8 @@ function bind() {
   });
   const list = $('#list');
   list.addEventListener('click', (e) => {
+    const apply = e.target.closest('.apply-screen');
+    if (apply) return applyScreen(apply.dataset.apply);
     const act = e.target.closest('[data-action]');
     if (act?.dataset.action === 'prev') return move(-1);
     if (act?.dataset.action === 'next') return move(1);
