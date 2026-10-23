@@ -127,6 +127,14 @@ async function handle(req, res) {
     }
   }
 
+  // Cheap fingerprint of what Claude changes (scans, screenshots, batches), so the page can refresh itself.
+  if (req.method === 'GET' && route === '/api/version') {
+    const mtime = (f) => (existsSync(f) ? statSync(f).mtimeMs : 0);
+    const shots = Object.values(findScreenshots(p)).map((rel) => `${rel}:${mtime(join(p.root, rel))}`).sort();
+    const batches = existsSync(p.batches) ? readdirSync(p.batches).filter((f) => f.endsWith('.md')).sort() : [];
+    return send(res, 200, { version: [mtime(p.copy), mtime(p.expert), ...shots, ...batches].join('|') });
+  }
+
   if (req.method === 'GET' && route === '/api/state') {
     return send(res, 200, {
       root: p.root,

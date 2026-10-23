@@ -127,6 +127,7 @@ function mutate(card, fn, { undo = true } = {}) {
     }
     e.updatedAt = now;
     prune(it.id);
+    unsaved.add(it.id);
   }
   scheduleSave();
 }
@@ -605,6 +606,7 @@ async function applyScreen(screen) {
   for (const c of cardById.values()) if (c.items.some((it) => sentIds.has(it.id))) refreshCard(c.id);
   renderProgress();
   const n = new Set(flagged.map((it) => normalizeText(it.text))).size;
+  rebaseline();
   toast(`Queued ${plural(n, 'string')} from ${screen} for Claude. Say “apply” in Claude Code when you’re ready.`);
 }
 
@@ -786,6 +788,7 @@ async function queueRetake(screen) {
   state.batches = [...(state.batches || []), path.split('/').pop()];
   $('#panel').dataset.key = '';
   renderPanel();
+  rebaseline();
   toast(`Retake of ${screen} queued. Say “apply” in Claude Code.`);
 }
 
@@ -964,6 +967,7 @@ async function saveBox(it, box) {
   if (box) it.box = { ...box, source: 'manual' };
   else delete it.box;
   renderPanel();
+  rebaseline();
   toast(box ? 'Location saved' : 'Location cleared');
 }
 
@@ -1132,6 +1136,8 @@ function setSplit(card, split) {
 
 let saveTimer = null;
 let dirty = false;
+// Feedback entries changed since the last successful save, so a reload can carry them over.
+const unsaved = new Set();
 function scheduleSave() {
   dirty = true;
   setSaveState('Saving…');
@@ -1155,6 +1161,7 @@ async function save({ keepalive = false } = {}) {
       return;
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    unsaved.clear();
     setSaveState('Saved');
   } catch {
     dirty = true;
@@ -1191,6 +1198,7 @@ async function uploadShot(slug, file) {
   state.screenshotTimes[slug] = new Date().toISOString();
   for (const it of items()) if (slugify(it.screen) === slug) delete it.box;
   render();
+  rebaseline();
   toast(cleared ? `Screenshot replaced. ${plural(cleared, 'marked location')} cleared.` : 'Screenshot added');
 }
 
@@ -1199,6 +1207,7 @@ async function removeShot(slug) {
   delete state.screenshots[slug];
   for (const it of items()) if (slugify(it.screen) === slug) delete it.box;
   render();
+  rebaseline();
 }
 
 function viewShot(card) {
@@ -1658,7 +1667,55 @@ function onKey(e) {
 async function load() {
   const res = await fetch('/api/state');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  apply(await res.json());
+  // Keep changes the server hasn't saved yet, on strings whose text the new scan didn't change.
+  const carried = [...unsaved].map((id) => [id, clone(state.feedback.items[id]), state.copy?.items.find((it) => it.id === id)?.text]);
+  const data = await res.json();
+  apply(data);
+  let kept = 0;
+  for (const [id, entry, text] of carried) {
+    const now = state.copy.items.find((it) => it.id === id);
+    if (!now || now.text !== text) continue;
+    if (entry) state.feedback.items[id] = entry;
+    else delete state.feedback.items[id];
+    kept += 1;
+  }
+  if (kept) {
+    buildCards();
+    render();
+    scheduleSave();
+  }
+  lastVersion = null;
+}
+
+/** The page changed something itself; take the server's new fingerprint as current so it doesn't look like Claude's work. */
+async function rebaseline() {
+  const res = await fetch('/api/version').catch(() => null);
+  if (res && res.ok) lastVersion = (await res.json()).version;
+}
+
+// Refresh when Claude finishes something (a batch applied, a screenshot retaken), without losing your place.
+let lastVersion = null;
+async function checkForUpdates() {
+  if (document.hidden || !state.copy) return;
+  const active = document.activeElement;
+  if (ui.editingId || ui.drawing || (active && /^(TEXTAREA|INPUT|SELECT)$/.test(active.tagName))) return;
+  const res = await fetch('/api/version').catch(() => null);
+  if (!res || !res.ok) return;
+  const { version } = await res.json();
+  if (lastVersion === null) {
+    lastVersion = version;
+    return;
+  }
+  if (version === lastVersion) return;
+  const before = new Map(state.copy.items.map((it) => [it.id, it.text]));
+  const y = window.scrollY;
+  await load();
+  window.scrollTo({ top: y });
+  const fresh = state.copy.items.filter((it) => it.status === 'changed' && before.get(it.id) !== it.text);
+  const screens = [...new Set(fresh.map((it) => it.screen))];
+  toast(fresh.length ? `${plural(fresh.length, 'string')} revised on ${screens.slice(0, 2).join(', ')}${screens.length > 2 ? ` +${screens.length - 2}` : ''}. Press Y to accept, R to send back.` : 'Updated from Claude');
+  const res2 = await fetch('/api/version').catch(() => null);
+  if (res2 && res2.ok) lastVersion = (await res2.json()).version;
 }
 
 function apply(data) {
@@ -1678,6 +1735,8 @@ async function boot() {
   bind();
   try {
     await load();
+    setInterval(checkForUpdates, 5000);
+    checkForUpdates();
   } catch (err) {
     $('#list').innerHTML = `<div class="empty"><strong>Couldn't load the copy</strong>Is the review server still running? (${esc(err.message)})</div>`;
     $('#progress-text').textContent = '';
