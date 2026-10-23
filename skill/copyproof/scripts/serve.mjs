@@ -136,6 +136,7 @@ async function handle(req, res) {
       voice: readText(p.voice),
       expert: readJson(p.expert, { version: 1, items: {} }),
       screenshots: findScreenshots(p),
+      batches: existsSync(p.batches) ? readdirSync(p.batches).filter((f) => f.endsWith('.md')) : [],
       screenshotTimes: Object.fromEntries(
         Object.entries(findScreenshots(p)).map(([slug, rel]) => [slug, statSync(join(p.root, rel)).mtime.toISOString()])
       ),
@@ -168,8 +169,9 @@ async function handle(req, res) {
   // One screen's feedback, queued for Claude Code to apply ("apply" picks up every batch not yet done).
   if (req.method === 'PUT' && route === '/api/batch') {
     const screen = url.searchParams.get('screen') || 'all';
+    const retake = url.searchParams.get('kind') === 'retake';
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const name = `${stamp}-${slugify(screen) || 'screen'}.md`;
+    const name = `${stamp}-${retake ? 'retake-' : ''}${slugify(screen) || 'screen'}.md`;
     writeAtomic(join(p.batches, name), (await readBody(req)).toString('utf8'));
     return send(res, 200, { ok: true, path: `${DATA_DIR}/batches/${name}` });
   }

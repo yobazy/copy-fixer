@@ -758,6 +758,37 @@ function renderKinds() {
 // ---------- screenshot panel ----------
 
 /** Strings on a screen whose text changed after its screenshot was taken. */
+function retakeQueued(slug) {
+  return (state.batches || []).some((f) => f.endsWith(`-retake-${slug}.md`));
+}
+
+function retakeButton(slug, screen, label = 'Ask Claude to retake it') {
+  return retakeQueued(slug)
+    ? `<span class="retake-queued">Retake queued. Say “apply” in Claude Code.</span>`
+    : `<button class="link small" data-action="retake" data-screen="${esc(screen)}">${label}</button>`;
+}
+
+/** Queue a screenshot retake for this screen; "apply" in Claude Code picks it up with the copy batches. */
+async function queueRetake(screen) {
+  const info = screenInfo(screen);
+  const strings = items().filter((it) => it.screen === screen && it.status !== 'removed').length;
+  const text = [
+    `# Retake screenshot: ${screen}`,
+    '',
+    `Retake the screenshot of **${screen}** and mark where its strings are (copyproof step 4), so it shows the current text.`,
+    info.route ? `Route: \`${info.route}\`` : null,
+    info.description ? `What it is: ${info.description}` : null,
+    `Strings on this screen: ${strings}. Get it into the state that shows the most of them.`,
+  ].filter((l) => l != null).join('\n') + '\n';
+  const res = await fetch(`/api/batch?screen=${encodeURIComponent(screen)}&kind=retake`, { method: 'PUT', body: text }).catch(() => null);
+  if (!res || !res.ok) return toast('Could not queue the retake');
+  const { path } = await res.json();
+  state.batches = [...(state.batches || []), path.split('/').pop()];
+  $('#panel').dataset.key = '';
+  renderPanel();
+  toast(`Retake of ${screen} queued. Say “apply” in Claude Code.`);
+}
+
 function changedSinceShot(slug) {
   const taken = state.screenshotTimes[slug];
   if (!taken) return 0;
@@ -825,7 +856,7 @@ function renderPanel() {
         <strong>Add a screenshot of ${esc(info.name)}</strong>
         <span>Drop an image here, paste one, or click to choose a file.</span>
       </button>
-      <p class="panel-note">Or ask Claude to <em>capture screenshots</em>. For web apps it also marks where each string is.</p>`;
+      <p class="panel-note">${retakeButton(slug, it.screen, 'Ask Claude to capture it')} For web apps it also marks where each string is.</p>`;
     return;
   }
   const trigger = triggerOf(it);
@@ -839,7 +870,7 @@ function renderPanel() {
   const stale = changedSinceShot(slug);
   panel.dataset.key = `${slug}|${src}|${it.id}|${ui.drawing}|${stale}`;
   panel.innerHTML = `${head}
-    ${stale ? `<p class="shot-stale">This screenshot is older than ${plural(stale, 'changed string')} on this screen, so it may show old text. Replace it, or ask Claude to retake it.</p>` : ''}
+    ${stale ? `<p class="shot-stale">This screenshot is older than ${plural(stale, 'changed string')} on this screen, so it may show old text. ${retakeButton(slug, it.screen)}</p>` : ''}
     <div class="shot-wrap" id="shot-wrap">${shotMarkup(slug, it, { interactive: true })}</div>
     <div class="panel-foot">
       <p class="panel-status">${ui.drawing ? '<span class="marked">Drag a box around the string. <kbd>Esc</kbd> to cancel.</span>' : status}</p>
@@ -1454,6 +1485,7 @@ function bind() {
       $('#shot-input').click();
     } else if (a === 'shot-remove') removeShot(act.dataset.slug);
     else if (a === 'shot-zoom' && card) viewShot(card);
+    else if (a === 'retake') queueRetake(act.dataset.screen);
     else if (a === 'draw') startDrawing();
     else if (a === 'clear-box' && card) saveBox(panelItem(card), null);
     else if (a === 'box' && !ui.drawing) {
