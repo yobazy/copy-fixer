@@ -5,6 +5,7 @@
   "description": "Claude Code skill for reviewing and fixing the user-facing copy in any project",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "test:e2e": "node --test test/e2e/*.e2e.mjs",
     "demo": "node skill/copyproof/scripts/serve.mjs test/fixtures/demo-app"
   },
   "engines": { "node": ">=18" }
