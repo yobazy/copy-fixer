@@ -146,3 +146,13 @@ test('a screen batch takes that screen plus the same text elsewhere, and sent st
   assert.equal(isSent(fb.items.d), false, 'editing after sending makes it pending again');
   assert.deepEqual(ids({ pending: true }), ['a', 'b', 'c', 'd']);
 });
+
+test('a screen batch matches the screen by slug, the way export --screen is typed', () => {
+  const copy = { items: [{ id: 'a', text: 'Save', screen: 'Settings › Notifications', file: 'a.tsx' }, { id: 'b', text: 'Done', screen: 'Profile', file: 'b.tsx' }] };
+  const fb = { items: { a: { rating: 2 }, b: { rating: 2 } } };
+  const ids = (screen) => selectForPrompt(copy, fb, { screen }).flagged.map((x) => x.id);
+  assert.deepEqual(ids('settings-notifications'), ['a']);
+  assert.deepEqual(ids('SETTINGS › NOTIFICATIONS'), ['a']);
+  assert.deepEqual(ids('profile'), ['b']);
+  assert.deepEqual(ids('Nowhere'), []);
+});
