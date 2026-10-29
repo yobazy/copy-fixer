@@ -27,6 +27,9 @@ Branch `ov/a-copy`, pushed to `audit-2026-10-29`. Scratch (screenshots, scripts,
 - `LATER.md` proposal.
 - Screenshots: `scratch/a-copy/shots/` (`audit-*` click-through, `xss-*` escaping check, `fix-removed-before.png` / `fix-removed-after.png`).
 
+- Draft PR: https://github.com/yobazy/copyproof/pull/1 (#1 audit, tests and three fixes).
+- Every server and browser I started is stopped. Playwright is installed only in `scratch/a-copy/pw` and uses the existing Chromium cache.
+
 ## Left
 
 - Nothing half-built. Lower-ranked findings are in LATER.md.
