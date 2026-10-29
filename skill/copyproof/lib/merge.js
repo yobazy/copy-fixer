@@ -198,6 +198,8 @@ export function mergeScan({ prevCopy, prevFeedback, scans, full = false, now = n
   }
   for (const it of prevItems) {
     if (!isCovered(it.file)) result.push(it);
+    // Already removed on an earlier scan: keep it while it has feedback, or the next rescan drops it and orphans that feedback.
+    else if (it.status === 'removed' && !freshIds.has(it.id) && hasFeedback(fbItems[it.id])) result.push(it);
   }
 
   result.sort((a, b) => a.file.localeCompare(b.file) || (a.line || 0) - (b.line || 0));

@@ -77,6 +77,25 @@ test('removed strings are dropped unless they had feedback', () => {
   assert.equal(second.stats.removed, 1);
 });
 
+test('a removed string with feedback survives later rescans, and comes back if its text does', () => {
+  const first = mergeScan({ scans: [{ items: [item('Keep', 1), item('Rated', 50)] }], now: NOW });
+  const rated = first.copy.items.find((i) => i.text === 'Rated').id;
+  const scan = (items) => [{ files: ['src/A.tsx'], items }];
+  const second = mergeScan({ prevCopy: first.copy, prevFeedback: { items: { [rated]: { rating: 3 } } }, scans: scan([item('Keep', 1)]), now: NOW });
+  const third = mergeScan({ prevCopy: second.copy, prevFeedback: second.feedback, scans: scan([item('Keep', 1)]), now: NOW });
+  assert.deepEqual(third.copy.items.map((i) => [i.text, i.status]), [['Keep', undefined], ['Rated', 'removed']]);
+  assert.equal(third.feedback.items[rated].rating, 3);
+  assert.equal(third.stats.total, 1);
+
+  const back = mergeScan({ prevCopy: third.copy, prevFeedback: third.feedback, scans: scan([item('Keep', 1), item('Rated', 50)]), now: NOW });
+  assert.deepEqual(back.copy.items.map((i) => [i.text, i.status]), [['Keep', undefined], ['Rated', undefined]]);
+  assert.equal(back.feedback.items[rated].rating, 3);
+
+  // Clearing its feedback lets it go on the next rescan.
+  const cleared = mergeScan({ prevCopy: second.copy, prevFeedback: { items: {} }, scans: scan([item('Keep', 1)]), now: NOW });
+  assert.deepEqual(cleared.copy.items.map((i) => i.text), ['Keep']);
+});
+
 test('incremental rescan leaves files it did not cover alone', () => {
   const first = mergeScan({ scans: [{ items: [item('A', 1), item('B', 1, { file: 'src/B.tsx' })] }], now: NOW });
   const second = mergeScan({ prevCopy: first.copy, scans: [{ files: ['src/A.tsx'], items: [item('A2', 1)] }], now: NOW });

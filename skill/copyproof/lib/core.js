@@ -133,7 +133,9 @@ export function selectForPrompt(copy, feedback, options = {}) {
   if (opts.screen) {
     // One screen's strings, plus the same text with the same feedback elsewhere, so it changes everywhere at once.
     const sameAs = (it) => normalizeText(it.text) + '\u0000' + feedbackKey(entries[it.id]);
-    const keys = new Set(flagged.filter((it) => it.screen === opts.screen).map(sameAs));
+    // Matched by slug, like screenshots and locate, so `--screen checkout` finds "Checkout".
+    const slug = slugify(opts.screen);
+    const keys = new Set(flagged.filter((it) => slugify(it.screen) === slug).map(sameAs));
     flagged = flagged.filter((it) => keys.has(sameAs(it)));
   }
   let exemplars = [];
