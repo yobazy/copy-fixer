@@ -149,3 +149,14 @@ test('locate serves the snippet for a screen, and 404s for an empty one', async 
   assert.match(await res.text(), /^\(\) => \(function locate/);
   assert.equal((await api('/api/locate?screen=Nowhere')).status, 404);
 });
+
+test('locate lets pages on this machine read it, but not other websites', async () => {
+  for (const origin of ['http://localhost:5173', 'http://127.0.0.1:3000', 'http://[::1]:8080', 'https://app.localhost']) {
+    const res = await api('/api/locate?screen=Checkout', { headers: { origin } });
+    assert.equal(res.headers.get('access-control-allow-origin'), origin, origin);
+  }
+  for (const origin of ['https://evil.example', 'http://localhost.evil.example', 'http://127.0.0.1.evil.example', 'null']) {
+    const res = await api('/api/locate?screen=Checkout', { headers: { origin } });
+    assert.equal(res.headers.get('access-control-allow-origin'), null, origin);
+  }
+});

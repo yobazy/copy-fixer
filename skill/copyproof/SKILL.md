@@ -90,7 +90,7 @@ A screenshot belongs to a screen by its file name: `.copyproof/screenshots/<slug
       async () => (0, eval)(await (await fetch('http://localhost:4477/api/locate?screen=' + encodeURIComponent('<screen name>'))).text())()
       ```
 
-      Use the port serve printed. If the page's content security policy blocks the fetch, print the same function with `node SKILL_DIR/scripts/locate.mjs <project> --screen "<screen name>"` and paste it into evaluate instead.
+      Use the port serve printed. The server only lets pages on this machine (`localhost`, `127.0.0.1`) read it. If the app is served from anywhere else, or its content security policy blocks the fetch, print the same function with `node SKILL_DIR/scripts/locate.mjs <project> --screen "<screen name>"` and paste it into evaluate instead.
    3. Without scrolling or changing anything, take a **full-page** screenshot to `.copyproof/screenshots/<slug>.png`.
 
    React Native Web and many single-page apps scroll inside a container, not the page, so a "full-page" screenshot only covers the first screen. Before locating, check for this with `Math.max(...[...document.querySelectorAll('*')].map(e => /(auto|scroll)/.test(getComputedStyle(e).overflowY) ? e.scrollHeight : 0))`. If the result is taller than the viewport, resize the viewport to that height first. Pages that reveal content on scroll need one pass of scrolling top to bottom before you locate.

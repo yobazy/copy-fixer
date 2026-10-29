@@ -40,6 +40,8 @@ const STATIC = {
   ),
 };
 
+const LOOPBACK_ORIGIN = /^https?:\/\/(localhost|[\w-]+\.localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+
 /** Resolve `rel` inside `base`, refusing anything that escapes it. */
 function inside(base, rel) {
   const full = resolve(base, normalize(rel).replace(/^([/\\])+/, ''));
@@ -116,9 +118,11 @@ async function handle(req, res) {
   }
 
   // The locate function, for the app's own page to fetch and run during the screenshot step
-  // (so it doesn't have to be pasted into the browser tool). Read-only, so any origin may ask.
+  // (so it doesn't have to be pasted into the browser tool). It carries the screen's copy, so only
+  // pages on this machine may read it; anywhere else, paste the snippet from locate.mjs instead.
   if (req.method === 'GET' && route === '/api/locate') {
-    const cors = { 'access-control-allow-origin': '*' };
+    const origin = req.headers.origin || '';
+    const cors = LOOPBACK_ORIGIN.test(origin) ? { 'access-control-allow-origin': origin, vary: 'Origin' } : { vary: 'Origin' };
     try {
       const snippet = locateSnippet(readJson(p.copy), url.searchParams.get('screen') || '');
       return send(res, 200, snippet, 'text/javascript; charset=utf-8', cors);
