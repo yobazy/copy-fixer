@@ -205,7 +205,7 @@ function matchesQuery(card) {
   if (!ui.query) return true;
   const fb = cardFb(card);
   const ex = exOf(card);
-  const hay = [...card.items.flatMap((it) => [it.text, it.file, it.screen, it.context, it.when, it.key, it.kind]), fb.suggestion, fb.comment, ex && ex.note].join(' ').toLowerCase();
+  const hay = [...card.items.flatMap((it) => [it.text, it.file, it.screen, it.context, it.when, it.key, it.kind, kindLabel(it.kind)]), fb.suggestion, fb.comment, ex && ex.note].join(' ').toLowerCase();
   return ui.query.split(/\s+/).every((w) => hay.includes(w));
 }
 
