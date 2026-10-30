@@ -1,4 +1,4 @@
-// The review page in a real browser: rate, rewrite, apply a screen, export, and refresh after Claude's work.
+// The review page in a real browser: rate, rewrite, queue a screen, export, and refresh after Claude's work.
 // Needs Playwright, which copyproof doesn't depend on:
 //
 //   npm i --no-save playwright && npx playwright install chromium
@@ -51,7 +51,7 @@ async function waitFor(fn, ms = 4000) {
   }
 }
 
-test('rate, rewrite, apply a screen, and export, saving to disk as you go', { skip }, async () => {
+test('rate, rewrite, queue a screen, and export, saving to disk as you go', { skip }, async () => {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -72,9 +72,9 @@ test('rate, rewrite, apply a screen, and export, saving to disk as you go', { sk
   await page.keyboard.press('Enter');
   await waitFor(() => feedbackOnDisk().items[id]?.suggestion === 'Paid. Your receipt is on its way.');
 
-  const apply = page.locator('.apply-screen').first();
-  assert.match(await apply.textContent(), /Apply this screen · 1/);
-  await apply.click();
+  const queue = page.locator('.queue-screen').first();
+  assert.match(await queue.textContent(), /Queue this screen · 1/);
+  await queue.click();
   await waitFor(() => readdirSync(join(dir, '.copyproof', 'batches')).length === 1);
   const batch = readFileSync(join(dir, '.copyproof', 'batches', readdirSync(join(dir, '.copyproof', 'batches'))[0]), 'utf8');
   assert.match(batch, /Copy revision: demo-app · Checkout/);

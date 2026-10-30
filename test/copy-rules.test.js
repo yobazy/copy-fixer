@@ -27,3 +27,10 @@ test('the page says "screen", not "stop"', () => {
   const source = ui('app.js') + ui('index.html');
   for (const phrase of [/next stop/i, /last stop/i, /every stop/i, /end of the line/i]) assert.doesNotMatch(source, phrase);
 });
+
+test('the screen button says "Queue", matching the Queued chip', () => {
+  const docs = ['ui/app.js', 'ui/index.html', 'SKILL.md', 'scripts/batches.mjs'].map((f) => readFileSync(new URL(`../skill/copyproof/${f}`, import.meta.url), 'utf8'));
+  docs.push(readFileSync(new URL('../README.md', import.meta.url), 'utf8'));
+  for (const text of docs) assert.doesNotMatch(text, /Apply this screen|Nothing to apply/);
+  assert.match(ui('app.js'), /Queue this screen · \$\{n\}/);
+});

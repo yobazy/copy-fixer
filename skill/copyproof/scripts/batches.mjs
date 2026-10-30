@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Batches of feedback the user sent from the review page ("Apply this screen"), oldest first.
+// Batches of feedback the user sent from the review page ("Queue this screen"), oldest first.
 //
 //   node batches.mjs [project]                 prints every batch not yet applied
 //   node batches.mjs [project] --list          just their file names
@@ -29,7 +29,7 @@ if (args.done || args['done-all']) {
     console.log(`Applied: ${name}`);
   }
 } else if (!pending.length) {
-  console.log('No batches waiting. In the review page, finish a screen and press "Apply this screen".');
+  console.log('No batches waiting. In the review page, finish a screen and press "Queue this screen".');
 } else if (args.list) {
   for (const name of pending) console.log(name);
 } else {

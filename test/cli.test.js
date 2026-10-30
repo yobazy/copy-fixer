@@ -44,7 +44,7 @@ test('export prints and saves the prompt, and says so when nothing is flagged', 
 });
 
 test('batches prints pending batches oldest first and moves applied ones to done/', () => {
-  assert.match(run('batches.mjs', [dir]).stdout, /No batches waiting/);
+  assert.match(run('batches.mjs', [dir]).stdout, /No batches waiting\. .*press "Queue this screen"/);
   mkdirSync(data('batches'), { recursive: true });
   writeFileSync(data('batches', '2026-01-02-inbox.md'), 'second');
   writeFileSync(data('batches', '2026-01-01-checkout.md'), 'first');

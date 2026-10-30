@@ -329,7 +329,7 @@ kbd {
 .group-title h2 code { font-size: 20px; font-weight: 600; }
 .group-title .desc { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 64ch; }
 .group-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.group-side .apply-screen { white-space: nowrap; }
+.group-side .queue-screen { white-space: nowrap; }
 .group-head .count { margin-top: 6px; color: var(--muted); font-size: 13px; font-family: var(--mono); white-space: nowrap; }
 /* one mark per string: what's left on this screen at a glance */
 .ticks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 3px; margin-top: 16px; }

@@ -590,20 +590,20 @@ function pendingOn(screen) {
   return selectForPrompt(state.copy, state.feedback, { ...exportOptions(), screen, pending: true, includeExemplars: false }).flagged;
 }
 
-function applyButton(screen) {
+function queueButton(screen) {
   const n = new Set(pendingOn(screen).filter((it) => it.screen === screen).map((it) => normalizeText(it.text))).size;
-  return `<button class="btn small apply-screen" data-apply="${esc(screen)}" ${n ? '' : 'disabled'} title="Queue this screen's feedback for Claude Code. Then say “apply” there.">${n ? `Apply this screen · ${n}` : 'Nothing to apply'}</button>`;
+  return `<button class="btn small queue-screen" data-queue="${esc(screen)}" ${n ? '' : 'disabled'} title="Queue this screen's feedback for Claude Code. Then say “apply” there.">${n ? `Queue this screen · ${n}` : 'Nothing to queue'}</button>`;
 }
 
 /** Queue one screen's pending feedback as a batch for Claude Code, and mark it sent. */
-async function applyScreen(screen) {
+async function queueScreen(screen) {
   const opts = { ...exportOptions(), screen, pending: true };
   const { flagged } = selectForPrompt(state.copy, state.feedback, opts);
-  if (!flagged.length) return toast('Nothing to apply on this screen');
+  if (!flagged.length) return toast('Nothing to queue on this screen');
   const shots = Object.fromEntries(Object.entries(state.screenshots).map(([k, v]) => [k, v.split('?')[0]]));
   const text = buildPrompt({ copy: state.copy, feedback: state.feedback, voice: state.voice, screenshots: shots, expert: state.expert }, opts);
   const res = await fetch(`/api/batch?screen=${encodeURIComponent(screen)}`, { method: 'PUT', body: text }).catch(() => null);
-  if (!res || !res.ok) return toast('Could not save the batch');
+  if (!res || !res.ok) return toast("Couldn't queue this screen. Is the review server running?");
   const at = new Date().toISOString();
   for (const it of flagged) {
     const e = state.feedback.items[it.id];
@@ -631,7 +631,7 @@ function buildGroup({ k, i, cards: list2 }) {
     <div class="group-head">
       <span class="seq">${stopCode(i)}</span>
       <div class="group-title"><h2>${title}</h2>${info.description ? `<p class="desc">${esc(info.description)}</p>` : ''}</div>
-      <div class="group-side"><span class="count">${done} of ${list2.length} reviewed</span>${ui.groupBy === 'screen' ? applyButton(k) : ''}</div>
+      <div class="group-side"><span class="count">${done} of ${list2.length} reviewed</span>${ui.groupBy === 'screen' ? queueButton(k) : ''}</div>
       <div class="ticks" aria-hidden="true" >${ticks}</div>
     </div>`;
   const frag = document.createDocumentFragment();
@@ -724,8 +724,8 @@ function renderProgress() {
     const done = ids.filter((id) => reviewed(cardById.get(id))).length;
     const c = $('.group-head .count', sec);
     if (c) c.textContent = `${done} of ${ids.length} reviewed`;
-    const apply = $('.apply-screen', sec);
-    if (apply) apply.outerHTML = applyButton(sec.dataset.key);
+    const queue = $('.queue-screen', sec);
+    if (queue) queue.outerHTML = queueButton(sec.dataset.key);
     for (const t of $$('.ticks i', sec)) t.className = `${tickClass(cardById.get(t.dataset.t))}${t.dataset.t === ui.focusId ? ' on' : ''}`;
     const link = $(`.group-link[data-target="${sec.id}"]`);
     if (link) {
@@ -1410,8 +1410,8 @@ function bind() {
   });
   const list = $('#list');
   list.addEventListener('click', (e) => {
-    const apply = e.target.closest('.apply-screen');
-    if (apply) return applyScreen(apply.dataset.apply);
+    const queue = e.target.closest('.queue-screen');
+    if (queue) return queueScreen(queue.dataset.queue);
     const act = e.target.closest('[data-action]');
     if (act?.dataset.action === 'prev') return move(-1);
     if (act?.dataset.action === 'next') return move(1);
