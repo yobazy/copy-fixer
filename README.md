@@ -5,7 +5,7 @@ Proofread every word in your app. A Claude Code skill that collects all the user
 1. **Scan.** Claude reads the project and pulls out every piece of user-facing text: headings, buttons, errors, empty states, toasts, emails, push notifications, permission prompts, accessibility labels. Each string comes with its file, line, screen and a note on when the user sees it. It works on web, React Native, iOS, Android, Flutter, desktop and backend templates, and it reads translation files when the project has them.
 2. **Capture (optional).** For web apps, Claude screenshots each screen and records where every string is on it. For native apps, you drop in screenshots and mark positions yourself.
 3. **Review.** A local page goes screen by screen and shows each string next to its screen, highlighted in place. You rate it from 1 (rewrite it) to 5 (love it), click the text to rewrite it (you see a word diff and the character count change), tag problems, or comment. Text that repeats across the app is one card, so you rate "Cancel" once, not twelve times.
-4. **Export.** Finished a screen? **Apply this screen** queues just that screen's feedback; say "apply" in Claude Code and keep reviewing while it works (those strings show as **Queued**). Or **Generate prompt** turns your feedback into a revision prompt. It's copied to your clipboard and saved to `.copyproof/prompt.md`. Paste it into any model, or tell Claude Code "apply my copy feedback".
+4. **Export.** Finished a screen? **Apply this screen** queues just that screen's feedback; say "apply" in Claude Code and keep reviewing while it works (those strings show as **Queued**). Or **Generate prompt** turns your feedback into a revision prompt. **Copy prompt** copies it to your clipboard and saves it to `.copyproof/prompt.md`. Paste it into any model, or tell Claude Code "apply my copy feedback".
 5. **Check the fixes.** Rescan after the fixes. Every revision comes back with a before/after diff. You accept it, or send it back with a note, and those notes go into the next prompt.
 
 ## Install
@@ -61,7 +61,7 @@ To add a screenshot, drop or paste an image onto the panel, or click it to pick 
   feedback.json    your ratings, tags, suggestions, comments, and history
   voice.md         voice and tone notes
   screenshots/     <screen-slug>.png
-  prompt.md        last generated prompt
+  prompt.md        last prompt you copied from the page (or exported)
 ```
 
 Projects reviewed before the rename keep their feedback: the scripts rename an old `.copy-review/` folder to `.copyproof/` on first use.

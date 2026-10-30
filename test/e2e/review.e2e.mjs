@@ -6,7 +6,7 @@
 //
 // COPYPROOF_PLAYWRIGHT=/path/to/node_modules/playwright points at an install elsewhere. Skips without one.
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
@@ -87,6 +87,33 @@ test('rate, rewrite, apply a screen, and export, saving to disk as you go', { sk
   assert.match(await page.locator('#export-text').inputValue(), /Nothing to send yet/);
   await page.keyboard.press('Escape');
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('the export dialog saves prompt.md on Copy, not on open', { skip }, async () => {
+  const promptFile = join(dir, '.copyproof', 'prompt.md');
+  rmSync(promptFile, { force: true });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(srv.url);
+  await page.waitForSelector('.card');
+  // Checkout is queued by the test above, so flag a string on the next screen.
+  await page.locator('#list').focus();
+  await page.keyboard.press(']');
+  await page.keyboard.press('j');
+  await page.keyboard.press('2');
+  const id = await page.locator('.card.focused').getAttribute('data-id');
+  await waitFor(() => feedbackOnDisk().items[id]?.rating === 2);
+
+  await page.keyboard.press('e');
+  await page.waitForSelector('#export-dialog[open]');
+  assert.doesNotMatch(await page.locator('#export-text').inputValue(), /Nothing to send yet/);
+  await page.waitForTimeout(800);
+  assert.equal(existsSync(promptFile), false, 'opening the dialog must not write prompt.md');
+
+  await page.locator('#export-copy').click();
+  const saved = await waitFor(() => existsSync(promptFile) && readFileSync(promptFile, 'utf8'));
+  assert.equal(saved, await page.locator('#export-text').inputValue());
+  await page.waitForSelector('#export-saved code');
   await page.close();
 });
 

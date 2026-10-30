@@ -1230,7 +1230,6 @@ function exportOptions() {
   };
 }
 
-let promptSaveTimer = null;
 function renderExport() {
   const opts = exportOptions();
   savePrefs({ export: opts });
@@ -1246,13 +1245,7 @@ function renderExport() {
   $('#export-summary').textContent = flagged.length
     ? `${plural(n, 'string')} to revise${exemplars.length ? ` · ${plural(exemplars.length, 'tone example')}` : ''} · about ${words.toLocaleString()} words${sentCount ? ` · ${sentCount} already queued left out` : ''}`
     : '';
-  clearTimeout(promptSaveTimer);
-  if (text) {
-    promptSaveTimer = setTimeout(async () => {
-      const res = await fetch('/api/prompt', { method: 'PUT', body: text }).catch(() => null);
-      $('#export-saved').innerHTML = res && res.ok ? 'Saved to <code>.copyproof/prompt.md</code>. In Claude Code, say “apply my copy feedback”.' : '';
-    }, 300);
-  } else $('#export-saved').textContent = '';
+  $('#export-saved').textContent = '';
 }
 
 function openExport() {
@@ -1269,6 +1262,9 @@ async function copyPrompt() {
     document.execCommand('copy');
   }
   toast('Prompt copied');
+  // Only a copied prompt goes to prompt.md: the apply step reads it, so a peek at the dialog mustn't change it.
+  const res = await fetch('/api/prompt', { method: 'PUT', body: text }).catch(() => null);
+  $('#export-saved').innerHTML = res && res.ok ? 'Saved to <code>.copyproof/prompt.md</code>. In Claude Code, say “apply my copy feedback”.' : 'Copied, but not saved to <code>.copyproof/prompt.md</code>. Is the review server running?';
 }
 
 function openSummary() {

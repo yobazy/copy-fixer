@@ -4,7 +4,6 @@
 
 ## Small fixes
 
-- **Save the prompt on Copy, not when the export dialog opens.** Peeking at the prompt overwrites `prompt.md`, which the apply step may then use.
 - **Bigger touch targets on phone for Edit, Discard and View on screen.** They're about 19 px tall; 24 px is the WCAG 2.2 minimum.
 - **Hide keycap hints on touch screens.** They crowd the card actions and mean nothing without a keyboard.
 - **Label the export and voice text boxes** (`aria-labelledby` on the dialog heading). Screen readers announce them as "edit text".
