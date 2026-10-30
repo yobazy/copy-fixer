@@ -62,9 +62,8 @@ typography:
     fontFeature: "tnum"
   label:
     fontFamily: "Overpass, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "11.5px"
+    fontSize: "12.5px"
     fontWeight: 750
-    letterSpacing: "0.06em"
   code:
     fontFamily: "Overpass Mono, ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "12px"
@@ -143,7 +142,7 @@ components:
 
 **Creative North Star: "Wayfinding"**
 
-Every screen of the reviewed app is a stop on a line and every string is a sign to approve. The page always answers three questions: where am I, what's left, what's next. A solid black rail carries a vertical signal-yellow line with one node per stop; the work area shows the current stop's sequence code and its strings as sign panels; a black "Next stop" bar sits at the bottom of the work column and turns yellow when the screen is done.
+Every screen of the reviewed app is a stop on a line and every string is a sign to approve. The page always answers three questions: where am I, what's left, what's next. A solid black rail carries a vertical signal-yellow line with one node per stop; the work area shows the current stop's sequence code and its strings as sign panels; a black "Next screen" bar sits at the bottom of the work column and turns yellow when the screen is done. The stops and the line are the picture; the words on the page always say "screen".
 
 The world is built from road-sign materials: black panels, a single signal yellow, warm concrete-grey ground, square corners, thick rules, and status rendered as rotated stamps. Density is high but staged: only the current sign shows its controls, rated signs collapse to their stamp. Overpass (Highway Gothic lineage) sets everything; Overpass Mono carries codes, keys, and counts. It refuses the generic grey sidebar-list-panel tool with one blue accent.
 
@@ -151,7 +150,7 @@ The world is built from road-sign materials: black panels, a single signal yello
 - Black rail with a 4px yellow line and circular stop nodes that fill (conic) with progress.
 - Signal yellow reserved for "you are here", the current string, and arrival.
 - Square corners everywhere except keycaps (3px) and stop nodes (round).
-- Status as stamps (3px bordered, uppercase, rotated -3deg), never hidden.
+- Status as stamps (3px bordered, sentence case, rotated -3deg), never hidden.
 - Focused sign inverts to a black panel with a 4px yellow outline.
 - Light and dark via prefers-color-scheme; the rail stays black in both.
 
@@ -160,7 +159,7 @@ The world is built from road-sign materials: black panels, a single signal yello
 A near-monochrome concrete-and-black ground with one signal color and a five-step rating scale for status.
 
 ### Primary
-- **Signal Yellow** (signal): the active stop row, the line itself, the focused-sign outline, the progress fill, the "Next stop" button, the arrived bar, text selection, and dark-mode focus rings. Always paired with **Sign Black** (on-signal) text.
+- **Signal Yellow** (signal): the active stop row, the line itself, the focused-sign outline, the progress fill, the "Next screen" button, the arrived bar, text selection, and dark-mode focus rings. Always paired with **Sign Black** (on-signal) text.
 
 ### Neutral
 - **Sign Black** (rail / ink): the rail, the Next-stop bar, the focused sign panel, sequence-code blocks, primary buttons, and body text in light mode.
@@ -196,7 +195,7 @@ Dark mode lifts the ground to #2b2a27, surfaces to #34332f, text to #f2f1ec, the
 - **Sign** (600, 19px, 1.4): every other string.
 - **Title** (750, 22px, 1.15): project name in the rail; sequence code (800, 22px) in its black block.
 - **Body** (400, 15px, 1.5, tabular-nums): UI text; context lines capped at 72ch, descriptions at 64ch.
-- **Label** (750, 11.5px, 0.06em, uppercase): field labels, the "You are here" marker, rewrite and revision labels. Stamps use 850, 13px, 0.08em.
+- **Label** (750, 12.5px, sentence case, no tracking): field labels, the "You are here" marker (12px), kind chips (12px), rewrite and revision labels. Stamps use 850, 14px.
 - **Code** (Overpass Mono, 12px): file paths, i18n keys, counts, kbd hints.
 
 ### Named Rules
@@ -215,7 +214,7 @@ Flat. Depth comes from tonal inversion (black rail, black focused sign on concre
 
 ## Shapes
 
-Square corners (0px) on buttons, inputs, tags, panels, and cards. Two exceptions carry meaning: keycaps (3px radius, 3px bottom border that collapses on press) and stop nodes (circles with a 4px yellow ring). Rules are thick: 2px ink top border on each sign, 4px ink rule under the stop header, 4px yellow outline on the focused sign, 2px yellow border on Next stop. Chevrons are drawn from borders, icons are 14–16px stroked SVG with square caps.
+Square corners (0px) on buttons, inputs, tags, panels, and cards. Two exceptions carry meaning: keycaps (3px radius, 3px bottom border that collapses on press) and stop nodes (circles with a 4px yellow ring). Rules are thick: 2px ink top border on each sign, 4px ink rule under the stop header, 4px yellow outline on the focused sign, 2px yellow border on Next screen. Chevrons are drawn from borders, icons are 14–16px stroked SVG with square caps.
 
 ## Components
 
@@ -243,8 +242,8 @@ White panel, 2px ink top rule, no radius. Rated cards show a stamp floated right
 ### Stop header
 Black sequence-code block (56px square, yellow numerals), screen name headline, description, a mono count, then a row of per-string ticks (10x14) colored by rating, closed by a 4px ink rule.
 
-### Next-stop bar
-Sticky black bar (56px min) with kbd hints, "Next stop" label, and a yellow-outlined destination button with a border-drawn chevron. When the screen is done (`arrived`), the whole bar turns signal yellow and its controls invert to black.
+### Next-screen bar
+Sticky black bar (56px min) with kbd hints, "Next screen" label, and a yellow-outlined destination button with a border-drawn chevron. When the screen is done (`arrived`), the whole bar turns signal yellow and its controls invert to black.
 
 ## Do's and Don'ts
 
@@ -261,3 +260,5 @@ Sticky black bar (56px min) with kbd hints, "Next stop" label, and a yellow-outl
 - **Don't** add soft drop shadows to cards or buttons; the only shadows are the menu popover and the screenshot spotlight.
 - **Don't** round sign panels, buttons, tags, or inputs.
 - **Don't** load fonts from a CDN; Overpass and Overpass Mono ship in ui/fonts.
+- **Don't** set labels in all caps or letter-space them; every label, chip and stamp is sentence case (decision 3A, 2026-10-29).
+- **Don't** call screens "stops" in the copy; the transit line is visual only.

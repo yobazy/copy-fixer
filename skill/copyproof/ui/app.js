@@ -1,5 +1,5 @@
 import {
-  KINDS, RATING_LABELS, TAGS, buildPrompt, findPlaceholders, isFlagged, isReviewed, isSent, normalizeText,
+  KINDS, RATING_LABELS, TAGS, buildPrompt, findPlaceholders, isFlagged, isReviewed, isSent, kindLabel, normalizeText,
   selectForPrompt, sentMark, similarity, slugify, wordDiff,
 } from '/lib/core.js';
 
@@ -54,6 +54,7 @@ function savePrefs(patch) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function toast(msg) {
   const el = $('#toast');
@@ -263,6 +264,13 @@ function shortPath(file) {
   return '…/' + file.split('/').slice(-2).join('/');
 }
 
+/** How a group's key reads on the page, and what one group is called. */
+function groupName(k) {
+  if (ui.groupBy === 'file') return shortPath(k);
+  return ui.groupBy === 'kind' ? kindLabel(k) : k;
+}
+const groupNoun = () => ({ file: 'file', kind: 'kind' })[ui.groupBy] || 'screen';
+
 function locLabel(it) {
   const lines = it.lines && it.lines.length > 1 ? `${it.lines[0]} +${it.lines.length - 1}` : it.line;
   return `${shortPath(it.file)}${lines ? ':' + lines : ''}`;
@@ -347,7 +355,7 @@ function cardInner(card) {
   const shot = state.screenshots[slugify(panelItem(card).screen)];
 
   const meta = [
-    `<span class="chip">${esc(it.kind || 'other')}</span>`,
+    `<span class="chip">${esc(kindLabel(it.kind))}</span>`,
     status ? `<span class="chip status-${it.status}">${status}</span>` : '',
     it.status === 'changed' ? `<span class="chip status-changed">Revised</span>` : '',
     fb.later ? `<span class="chip later-chip">For later</span>` : '',
@@ -568,13 +576,13 @@ function renderNextBar() {
   }
   const next = adjacentGroup(1);
   const done = groupDone(ui.group);
-  const name = (k) => esc(ui.groupBy === 'file' ? shortPath(k) : k);
+  const noun = groupNoun();
   bar.className = `nextbar ${done ? 'arrived' : ''}`;
   if (next == null) {
-    bar.innerHTML = `${hints}<span class="next-label">${done ? 'End of the line.' : 'Last stop.'}</span><button class="btn primary" data-action="export">Generate prompt <kbd>E</kbd></button>`;
+    bar.innerHTML = `${hints}<span class="next-label">${done ? `All ${noun}s reviewed.` : `Last ${noun}.`}</span><button class="btn primary" data-action="export">Generate prompt <kbd>E</kbd></button>`;
     return;
   }
-  bar.innerHTML = `${hints}<span class="next-label">${done ? 'Screen done.' : ''} Next stop</span><button class="next-stop" data-action="next-group"><span>${name(next)}</span> <kbd>]</kbd></button>`;
+  bar.innerHTML = `${hints}<span class="next-label">${done ? `${cap(noun)} done.` : ''} Next ${noun}</span><button class="next-stop" data-action="next-group"><span>${esc(groupName(next))}</span> <kbd>]</kbd></button>`;
 }
 
 /** Flagged strings on this screen that haven't been sent yet. */
@@ -617,7 +625,7 @@ function buildGroup({ k, i, cards: list2 }) {
   sec.dataset.key = k;
   const done = list2.filter(reviewed).length;
   const info = ui.groupBy === 'screen' ? screenInfo(k) : {};
-  const title = ui.groupBy === 'file' ? `<code>${esc(k)}</code>` : esc(k);
+  const title = ui.groupBy === 'file' ? `<code>${esc(k)}</code>` : esc(groupName(k));
   const ticks = list2.map((c) => `<i data-t="${c.id}" class="${tickClass(c)}"></i>`).join('');
   sec.innerHTML = `
     <div class="group-head">
@@ -671,7 +679,7 @@ function renderSidebar(keys, groups) {
         const list = groups.get(k);
         const done = list.filter(reviewed).length;
         const pct = list.length ? Math.round((done / list.length) * 100) : 0;
-        const name = ui.groupBy === 'file' ? shortPath(k) : k;
+        const name = groupName(k);
         const hasShot = ui.groupBy === 'screen' && state.screenshots[slugify(k)];
         const active = !ui.query && k === ui.group ? 'active' : '';
         return `<button class="group-link ${pct === 100 ? 'done' : pct ? 'started' : ''} ${active}" data-target="group-${i}" data-key="${esc(k)}" title="${esc(k)}" style="--pct:${pct}%" ${active ? 'aria-current="location"' : ''}><span class="node" aria-hidden="true"></span><span class="name">${esc(name)}</span><span class="num">${done}/${list.length}${hasShot ? '<span class="visually-hidden">, has a screenshot</span>' : ''}</span><span class="here">You are here</span></button>`;
@@ -753,7 +761,7 @@ function renderKinds() {
   const sel = $('#kind-filter');
   const kinds = [...counts.keys()].sort((a, b) => (KINDS.indexOf(a) + 1 || 99) - (KINDS.indexOf(b) + 1 || 99));
   if (!kinds.includes(ui.kind)) ui.kind = 'all';
-  sel.innerHTML = `<option value="all">All kinds</option>` + kinds.map((k) => `<option value="${esc(k)}">${esc(k)} (${counts.get(k)})</option>`).join('');
+  sel.innerHTML = `<option value="all">All kinds</option>` + kinds.map((k) => `<option value="${esc(k)}">${esc(kindLabel(k))} (${counts.get(k)})</option>`).join('');
   sel.value = ui.kind;
 }
 
@@ -1038,7 +1046,8 @@ function afterChange(card, focusSel) {
   if (ui.query || !ui.group || ui.doneSeen.has(ui.group) || !groupDone(ui.group)) return;
   ui.doneSeen.add(ui.group);
   const next = adjacentGroup(1);
-  toast(next != null ? `${ui.group} is done. Press ] for the next stop, ${next}.` : 'Every stop is done. Press E to generate the prompt.');
+  const noun = groupNoun();
+  toast(next != null ? `${groupName(ui.group)} is done. Press ] for the next ${noun}, ${groupName(next)}.` : `Every ${noun} is reviewed. Press E to generate the prompt.`);
 }
 
 function rate(card, v) {

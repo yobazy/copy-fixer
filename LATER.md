@@ -22,4 +22,3 @@
 
 - **Run the browser tests in CI.** `npm run test:e2e` exists now but needs Playwright installed; a GitHub Action would keep the page from regressing.
 - **A copyproof pass on its own UI before each release.** The dogfood run found real copy issues; a saved `.copyproof/` for this repo would track them over time.
-- **Decide on all-caps labels.** The wayfinding design uses uppercase, letter-spaced chips and stamps, which conflicts with the sentence-case rule used elsewhere.

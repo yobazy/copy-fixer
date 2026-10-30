@@ -47,7 +47,7 @@ In any project, in Claude Code:
 | `A` | Toggle auto-advance after rating |
 | `E` | Generate the prompt |
 
-The page works like a transit map. The rail on the left draws your screens as stops on a line: filled stops are done, and the yellow one is where you are. Each screen shows a strip of marks, one per string, coloured by rating, so you can see what's left. The string you're on lights up as a black panel. Rated strings get a stamp (Weak, Good, Love it…). The bar along the bottom shows the keys and the next stop, and it turns yellow when a screen is done.
+The page works like a transit map. The rail on the left draws your screens as stops on a line: filled stops are done, and the yellow one is where you are. Each screen shows a strip of marks, one per string, coloured by rating, so you can see what's left. The string you're on lights up as a black panel. Rated strings get a stamp (Weak, Good, Love it…). The bar along the bottom shows the keys and the next screen, and it turns yellow when a screen is done.
 
 To add a screenshot, drop or paste an image onto the panel, or click it to pick a file. **View** has the one-at-a-time layout, auto-advance, compact cards, voice notes and shortcuts. Click the progress line under the project name for a summary: reviewed count, average rating, and screens sorted worst first.
 

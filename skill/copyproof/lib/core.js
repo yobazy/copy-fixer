@@ -20,6 +20,16 @@ export const KINDS = [
   'legal', 'other',
 ];
 
+const KIND_NAMES = { nav: 'Navigation', 'title-meta': 'Page title' };
+
+/** A kind id as a sentence-case label: "empty-state" → "Empty state". */
+export function kindLabel(kind) {
+  const k = String(kind || 'other');
+  if (KIND_NAMES[k]) return KIND_NAMES[k];
+  const words = k.replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export const RATING_LABELS = {
   1: 'Rewrite it',
   2: 'Weak',
